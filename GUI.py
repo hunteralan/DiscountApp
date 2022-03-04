@@ -45,4 +45,6 @@ class Ui(QtWidgets.QDialog):
 if __name__ == '__main__':
     app = QtWidgets.QApplication(sys.argv)
     window = Ui()
+    print("hi")
     sys.exit(app.exec_())
+    
