@@ -3,8 +3,9 @@ import uuid
 from configparser import ConfigParser
 import os
 import sqlite3
+from Classes.DBConnector import DBConnector
 
-class Employee:
+class Employee(DBConnector):
     def __init__(self, username, password=None, employeeName=None, accessLevel=0):
         '''
             Constructor for the employee class.\n
@@ -19,15 +20,11 @@ class Employee:
                 {accessLevel}: In order to perform operations on other employees, accessLevel must be both greater than \n
                     \tthe employee to be operated on as well as above the admin threshold set in db.conf
         '''
-
-        self.__rootDir = os.path.join(os.getcwd(), "Database")
-
         config = ConfigParser()
-        config.read(os.path.join(self.__rootDir, "db.conf"))
+        config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
 
         self.__config = config["AUTH"]
-        self.__connection = None
-        self.__cursor = None
+        DBConnector.__init__(self, self.__config["DBname"])
 
         self.username = username
 
@@ -40,43 +37,20 @@ class Employee:
 
         self.password = password
 
-    def __connect(self):
-        '''
-            This private method creates a connection to the database.\n
-            THIS SHOULD NOT BE TOUCHED OUTSIDE OF THE CLASS!!
-        '''
-
-        try:
-            dbName = self.__config["name"]
-            self.__connection = sqlite3.connect(os.path.join(self.__rootDir, "auth", f"{dbName}.db"))
-            self.__cursor = self.__connection.cursor()
-            print("[INFO] EM: Connection successfully established.")
-        except Exception as e:
-            print(f"[ERROR] Connection unsuccessful: {e}")
-
-    def __disconnect(self):
-        '''
-            This private method properly closes a connection to the database.\n
-            THIS SHOULD NOT BE TOUCHED OUTSIDE OF THE CLASS!!
-        '''
-
-        self.__connection.close()
-        print("[INFO] EM: Connection closed.")
-
     def displayTable(self):
         '''
             Used for debug purposes to show the entire Employee database table.
         '''
 
-        self.__connect()
+        self._connect()
 
         sql = """
             SELECT *
             FROM Employee;
         """
-        table = self.__cursor.execute(sql).fetchall()
+        table = self._cursor.execute(sql).fetchall()
 
-        self.__disconnect()
+        self._disconnect()
 
         for row in table:
             print(row)
@@ -86,16 +60,16 @@ class Employee:
             Used to get the employee information for verification.
         '''
 
-        self.__connect()
+        self._connect()
 
         sql = """
             SELECT *
             FROM Employee
             WHERE username = (?);
         """
-        info = self.__cursor.execute(sql, (self.username,)).fetchone()
+        info = self._cursor.execute(sql, (self.username,)).fetchone()
 
-        self.__disconnect()
+        self._disconnect()
 
         return info
 
@@ -134,7 +108,7 @@ class Employee:
         '''
 
         if (self.password != None and self.employeeName != None):
-            self.__connect()
+            self._connect()
 
             sql = """
                 INSERT INTO Employee (accessLevel, username, password, salt, name)
@@ -143,19 +117,19 @@ class Employee:
             """
 
             try:
-                self.__cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
-                self.__connection.commit()
+                self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
+                self._connection.commit()
                 print(f"[INFO] Added {self.username} to the database!")
-            except Exception:
-                print(f"This employee already exists!")
+            except Exception as e:
+                print(f"[ERROR] Adding user to database unsuccessful: {e}")
 
-            self.__disconnect()
+            self._disconnect()
         
         elif (self.employeeName == None):
-            print("Cannot add employee to database with blank name!")
+            raise ValueError("Cannot add employee to database with blank name!")
 
         else:
-            print("Cannot add employee to database with blank password!")
+            raise ValueError("Cannot add employee to database with blank password!")
 
     def deleteAccount(self, employee):
         '''
@@ -167,16 +141,16 @@ class Employee:
                 {employee}: this is the Employee object with the supplied username you wish to remove. Does not require user to be removed's password.
         '''
 
-        self.__connect()
+        self._connect()
 
         if (type(employee) != Employee):
-            print(f"{employee} is not a proper Employee!")
+            raise TypeError(f"{employee} is not a proper Employee!")
         elif (not employee.checkExists()):
-            print("This employee does not exist in the database!")
-        elif (int(self.__config["accessLevel_admin_priv"]) > self.accessLevel):
-            print(f"No sufficient privilage to remove from database: not admin")
+            raise KeyError("This employee does not exist in the database!")
+        elif (int(self._config["accessLevel_admin_priv"]) > self.accessLevel):
+            raise ValueError(f"No sufficient privilage to remove from database: not admin")
         elif (employee.accessLevel >= self.accessLevel):
-            print(f"No sufficient privilage to remove from database: user is same or higher management level")
+            raise ValueError(f"No sufficient privilage to remove from database: user is same or higher management level")
         else:
             sql = """
                 DELETE 
@@ -184,11 +158,11 @@ class Employee:
                 WHERE username = (?)
             """
 
-            self.__cursor.execute(sql, (employee.username,))
-            self.__connection.commit()
+            self._cursor.execute(sql, (employee.username,))
+            self._connection.commit()
             print(f"[INFO] Removed {employee.username} from the database!")
 
-            self.__disconnect()
+            self._disconnect()
 
     def changePassword(self, newPassword, employee=None):
         '''
@@ -202,7 +176,7 @@ class Employee:
         '''
 
         if (employee==None and self.verifyLogin() and self.checkExists()): # Logic if user wants to change own password
-            self.__connect()
+            self._connect()
 
             sql = """
                 UPDATE Employee
@@ -211,16 +185,16 @@ class Employee:
             """
 
             try:
-                self.__cursor.execute(sql, (newPassword, self.username,))
-                self.__connection.commit()
+                self._cursor.execute(sql, (newPassword, self.username,))
+                self._connection.commit()
                 print(f"[INFO] Changed {self.username}'s password in the database!")
                 self.password = newPassword
             except Exception as e:
                 print(f"[ERROR] Error changing password: {e}")
 
-            self.__disconnect()
-        elif (type(employee) == Employee and employee.checkExists() and employee.accessLevel < self.accessLevel and self.accessLevel >= int(self.__config["accessLevel_admin_priv"])): # Logic if another employee wants to change anothers password
-            self.__connect()
+            self._disconnect()
+        elif (type(employee) == Employee and employee.checkExists() and employee.accessLevel < self.accessLevel and self.accessLevel >= int(self._config["accessLevel_admin_priv"])): # Logic if another employee wants to change anothers password
+            self._connect()
 
             sql = """
                 UPDATE Employee
@@ -229,20 +203,20 @@ class Employee:
             """
 
             try:
-                self.__cursor.execute(sql, (newPassword, employee.username,))
-                self.__connection.commit()
+                self._cursor.execute(sql, (newPassword, employee.username,))
+                self._connection.commit()
                 print(f"[INFO] Changed {employee.username}'s password in the database!")
                 self.password = newPassword
             except Exception as e:
                 print(f"[ERROR] Error changing password: {e}")
 
-            self.__disconnect()
+            self._disconnect()
         elif (type(employee) == Employee and employee.accessLevel >= self.accessLevel):
-            print("Cannot change the password of a user! (Higher management)")
-        elif (type(employee) == Employee and self.accessLevel < int(self.__config["accessLevel_admin_priv"])):
-            print("You do not have admin privilege!")
+            raise ValueError("Cannot change the password of a user! (Higher management)")
+        elif (type(employee) == Employee and self.accessLevel < int(self._config["accessLevel_admin_priv"])):
+            raise ValueError("You do not have admin privilege!")
         else:
-            print("User either does not exist or incorrect info is supplied for user!")
+            raise ValueError("User either does not exist or incorrect info is supplied for user!")
 
 
     def changeAccessLevel(self, employee, newLevel):
@@ -255,10 +229,10 @@ class Employee:
         if (type(employee) == Employee):
             if (self.checkExists() and self.verifyLogin()):
                 if (newLevel > self.accessLevel):
-                    print(f"Cannot promote an employee to higher rank than yourself!")
+                    raise ValueError(f"Cannot promote an employee to higher rank than yourself!")
 
-                elif (type(employee) == Employee and self.accessLevel > employee.accessLevel and employee.checkExists() and self.accessLevel >= int(self.__config["accessLevel_admin_priv"])):
-                    self.__connect()
+                elif (type(employee) == Employee and self.accessLevel > employee.accessLevel and employee.checkExists() and self.accessLevel >= int(self._config["accessLevel_admin_priv"])):
+                    self._connect()
                     
                     info = employee.__getEmployeeInfo()
 
@@ -267,22 +241,22 @@ class Employee:
                         SET accessLevel = (?)
                         WHERE username = (?)
                     '''
-                    self.__cursor.execute(sql, (newLevel, employee.username,))
-                    self.__connection.commit()
+                    self._cursor.execute(sql, (newLevel, employee.username,))
+                    self._connection.commit()
                     print(f"[INFO] Changed {employee.username}'s access level in the database!")
                     self.accessLevel = newLevel
 
-                    self.__disconnect()
+                    self._disconnect()
 
                 elif (self.accessLevel <= employee.accessLevel):
-                    print("Cannot promote a user in a higher or equivelent position")
+                    raise ValueError("Cannot promote a user in a higher or equivelent position")
 
                 elif (type(employee) != Employee or not employee.checkExists()):
-                    print(f"{employee.username} is not a valid employee")
+                    raise ValueError(f"{employee.username} is not a valid employee")
 
                 else:
-                    print(f"No sufficient privilage to promote users: not admin")
+                    raise ValueError(f"No sufficient privilage to promote users: not admin")
             else:
-                print(f"Incorrect creditials supplied for {self.username}")
+                raise ValueError(f"Incorrect creditials supplied for {self.username}")
         else:
-            print(f"{employee} is not an employee object!")
+            raise TypeError(f"{employee} is not an employee object!")
