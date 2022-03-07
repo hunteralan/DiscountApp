@@ -116,12 +116,9 @@ class Employee(DBConnector):
                 (?, ?, ?, ?, ?)
             """
 
-            try:
-                self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
-                self._connection.commit()
-                print(f"[INFO] Added {self.username} to the database!")
-            except Exception as e:
-                print(f"[ERROR] Adding user to database unsuccessful: {e}")
+            self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
+            self._connection.commit()
+            print(f"[INFO] Added {self.username} to the database!")
 
             self._disconnect()
         
@@ -184,13 +181,10 @@ class Employee(DBConnector):
                 WHERE username = (?)
             """
 
-            try:
-                self._cursor.execute(sql, (newPassword, self.username,))
-                self._connection.commit()
-                print(f"[INFO] Changed {self.username}'s password in the database!")
-                self.password = newPassword
-            except Exception as e:
-                print(f"[ERROR] Error changing password: {e}")
+            self._cursor.execute(sql, (newPassword, self.username,))
+            self._connection.commit()
+            print(f"[INFO] Changed {self.username}'s password in the database!")
+            self.password = newPassword
 
             self._disconnect()
         elif (type(employee) == Employee and employee.checkExists() and employee.accessLevel < self.accessLevel and self.accessLevel >= int(self._config["accessLevel_admin_priv"])): # Logic if another employee wants to change anothers password
@@ -202,13 +196,10 @@ class Employee(DBConnector):
                 WHERE username = (?)
             """
 
-            try:
-                self._cursor.execute(sql, (newPassword, employee.username,))
-                self._connection.commit()
-                print(f"[INFO] Changed {employee.username}'s password in the database!")
-                self.password = newPassword
-            except Exception as e:
-                print(f"[ERROR] Error changing password: {e}")
+            self._cursor.execute(sql, (newPassword, employee.username,))
+            self._connection.commit()
+            print(f"[INFO] Changed {employee.username}'s password in the database!")
+            self.password = newPassword
 
             self._disconnect()
         elif (type(employee) == Employee and employee.accessLevel >= self.accessLevel):
