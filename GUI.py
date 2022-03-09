@@ -1,5 +1,5 @@
-from PyQt5 import QtWidgets, uic
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QInputDialog, QLineEdit
+from PyQt5 import QtWidgets, uic, QtGui
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QInputDialog, QLineEdit, QDesktopWidget
 from Classes.Employee import Employee
 
 class Registration(QMainWindow):
@@ -70,14 +70,13 @@ class Registration(QMainWindow):
         failMsg.setWindowTitle('Error!')
         failMsg.setText(message)
         
-        x = failMsg.exec_()
+        failMsg.exec_()
         
 class Login(QMainWindow):
     def __init__(self):
         super(Login, self).__init__()
-        uic.loadUi('UI/loginWindow.ui', self)
+        uic.loadUi('UI/loginWindow2.ui', self)
         self.showMaximized()
-        #self.center()
         Employee("test").displayTable()
         self.submit = self.findChild(QtWidgets.QPushButton, 'pushButton_3')
         self.submit.clicked.connect(self.onRegister)
@@ -112,7 +111,8 @@ class Login(QMainWindow):
         failMsg.setWindowTitle('Error!')
         failMsg.setText(message)
         
-        x = failMsg.exec_()
+        failMsg.exec_()
+    
         
 class Main(QMainWindow):
     def __init__(self, username):
