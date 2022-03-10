@@ -1,5 +1,6 @@
 import hashlib
 import hmac
+from typing import ValuesView
 import uuid
 from configparser import ConfigParser
 import os
@@ -86,6 +87,7 @@ class Employee(DBConnector):
         verified = False
 
         employeeInfo = self.__getEmployeeInfo()
+        
         if (employeeInfo != None and employeeInfo[1] == self.username and hmac.compare_digest(self.password, employeeInfo[2])):
             verified = True
 
@@ -112,6 +114,7 @@ class Employee(DBConnector):
         '''
 
         if (self.password not in [None, ''] and self.employeeName not in [None, ''] and self.username not in [None, '']):
+
             self._connect()
 
             sql = """
@@ -122,6 +125,7 @@ class Employee(DBConnector):
 
             try:
                 self._cursor.execute(sql, (self.accessLevel, self.username, self.password, self.salt, self.employeeName))
+
                 self._connection.commit()
                 print(f"[INFO] Added {self.username} to the database!")
             except Exception:
@@ -134,6 +138,7 @@ class Employee(DBConnector):
 
         elif (self.username in [None, '']):
             raise ValueError("Cannot add employee to database with blank username!")
+
 
         else:
             raise ValueError("Cannot add employee to database with blank password!")
@@ -261,3 +266,4 @@ class Employee(DBConnector):
                 raise ValueError(f"Incorrect creditials supplied for {self.username}")
         else:
             raise TypeError(f"{employee} is not an employee object!")
+
