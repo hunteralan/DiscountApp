@@ -1,13 +1,13 @@
-import hashlib as hl
+import hashlib
+import hmac
 from typing import ValuesView
 import uuid
 from configparser import ConfigParser
 import os
-import sqlite3
 from Classes.DBConnector import DBConnector
 
 class Employee(DBConnector):
-    def __init__(self, username, password=None, employeeName=None, accessLevel=0):
+    def __init__(self, username:str, password:str=None, employeeName:str=None, accessLevel:int=0):
         '''
             Constructor for the employee class.\n
             
@@ -32,11 +32,15 @@ class Employee(DBConnector):
         if (self.checkExists()):
             self.employeeName = self.__getEmployeeInfo()[0]
             self.accessLevel = self.__getEmployeeInfo()[0]
+            self.salt = self.__getEmployeeInfo()[3]
         else:
             self.employeeName = employeeName
             self.accessLevel = accessLevel
+            self.salt = uuid.uuid4().hex.encode()
 
-        self.password = password
+        if (password != None):
+            passwordHash = hashlib.pbkdf2_hmac("sha256", password.encode(), self.salt, 100000)
+            self.password = passwordHash
 
     def displayTable(self):
         '''
@@ -83,7 +87,8 @@ class Employee(DBConnector):
         verified = False
 
         employeeInfo = self.__getEmployeeInfo()
-        if (employeeInfo != None and employeeInfo[1] == self.username and employeeInfo[2] == self.password):
+        
+        if (employeeInfo != None and employeeInfo[1] == self.username and hmac.compare_digest(self.password, employeeInfo[2])):
             verified = True
 
         return verified
@@ -118,9 +123,9 @@ class Employee(DBConnector):
                 (?, ?, ?, ?, ?)
             """
 
-
             try:
-                self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
+                self._cursor.execute(sql, (self.accessLevel, self.username, self.password, self.salt, self.employeeName))
+
                 self._connection.commit()
                 print(f"[INFO] Added {self.username} to the database!")
             except Exception:
@@ -133,15 +138,6 @@ class Employee(DBConnector):
 
         elif (self.username in [None, '']):
             raise ValueError("Cannot add employee to database with blank username!")
-
-            self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
-            self._connection.commit()
-            print(f"[INFO] Added {self.username} to the database!")
-
-            self._disconnect()
-        
-        elif (self.employeeName == None):
-            raise ValueError("Cannot add employee to database with blank name!")
 
 
         else:

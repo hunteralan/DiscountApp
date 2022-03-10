@@ -1,40 +1,49 @@
-CREATE TABLE IF NOT EXISTS Loyalty (
-    name TEXT
-    requirement TEXT,
+CREATE TABLE IF NOT EXISTS Reward (
+    name TEXT NOT NULL PRIMARY KEY,
+    requirement INTEGER NOT NULL, -- This is for items
+    priceReq REAL,
     description TEXT,
-    title TEXT PRIMARY KEY,
-    createdBy TEXT
+    createdBy TEXT,
+    active INTEGER,
+    numReq INTEGER,
+    createdOn INTEGER,
+    expireDate INTEGER,
+    type TEXT,
+    FOREIGN KEY(requirement) REFERENCES Inventory(SKU)
 );
 
 CREATE TABLE IF NOT EXISTS Customer (
-    name TEXT,
-    address TEXT,
-    age INTEGER,
+    name TEXT NOT NULL,
+    DOB INTEGER NOT NULL, 
     phone INTEGER PRIMARY KEY,
     DLN INTEGER,
     email TEXT,
-    customerSince
+    customerSince INTEGER NOT NULL
 );
 
 CREATE TABLE IF NOT EXISTS Inventory (
-    name TEXT
+    name TEXT NOT NULL,
     SKU INTEGER PRIMARY KEY,
-    price REAL,
+    price REAL NOT NULL,
     count INTEGER
 );
 
 CREATE TABLE IF NOT EXISTS hasReward (
     phone INTEGER,
     title text,
-    quantity INTEGER,
+    useBy INTEGER,
     FOREIGN KEY(phone) REFERENCES Customer(phone),
-    FOREIGN KEY(title) REFERENCES Loyalty(title)
+    FOREIGN KEY(title) REFERENCES Reward(name)
 );
 
 CREATE TABLE IF NOT EXISTS purchaseHistory (
     phone INTEGER,
     SKU INTEGER,
     quantity INTEGER,
+    purchaseDate INTEGER,
+    totalCost REAL,
     FOREIGN KEY(phone) REFERENCES Customer(phone),
     FOREIGN KEY(SKU) REFERENCES Inventory(SKU)
 );
+
+INSERT OR IGNORE INTO Inventory(name, SKU, price, count) VALUES ('Visit', 0, 0.00, 1);
