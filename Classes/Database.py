@@ -1,4 +1,3 @@
-import sqlite3
 import configparser as cp
 import os
 from shutil import copy
