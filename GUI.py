@@ -1,5 +1,5 @@
-from PyQt5 import QtWidgets, uic, QtGui
-from PyQt5.QtWidgets import QMessageBox, QMainWindow, QInputDialog, QLineEdit, QDesktopWidget
+from PyQt5 import QtWidgets, uic
+from PyQt5.QtWidgets import QMessageBox, QMainWindow, QInputDialog, QLineEdit
 from Classes.Employee import Employee
 
 class Registration(QMainWindow):
