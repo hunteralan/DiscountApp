@@ -1,4 +1,5 @@
 import hashlib as hl
+from typing import ValuesView
 import uuid
 from configparser import ConfigParser
 import os
@@ -82,7 +83,7 @@ class Employee(DBConnector):
         verified = False
 
         employeeInfo = self.__getEmployeeInfo()
-        if (employeeInfo[1] == self.username and employeeInfo[2] == self.password):
+        if (employeeInfo != None and employeeInfo[1] == self.username and employeeInfo[2] == self.password):
             verified = True
 
         return verified
@@ -107,7 +108,8 @@ class Employee(DBConnector):
             Will not work if you attempt to add an existing employee or supply the employee with no password.
         '''
 
-        if (self.password != None and self.employeeName != None):
+        if (self.password not in [None, ''] and self.employeeName not in [None, ''] and self.username not in [None, '']):
+
             self._connect()
 
             sql = """
@@ -115,6 +117,22 @@ class Employee(DBConnector):
                 VALUES 
                 (?, ?, ?, ?, ?)
             """
+
+
+            try:
+                self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
+                self._connection.commit()
+                print(f"[INFO] Added {self.username} to the database!")
+            except Exception:
+                raise ValueError(f"User already exists!")
+
+            self._disconnect()
+        
+        elif (self.employeeName in [None, '']):
+            raise ValueError("Cannot add employee to database with blank name!")
+
+        elif (self.username in [None, '']):
+            raise ValueError("Cannot add employee to database with blank username!")
 
             self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
             self._connection.commit()
@@ -124,6 +142,7 @@ class Employee(DBConnector):
         
         elif (self.employeeName == None):
             raise ValueError("Cannot add employee to database with blank name!")
+
 
         else:
             raise ValueError("Cannot add employee to database with blank password!")
@@ -251,3 +270,4 @@ class Employee(DBConnector):
                 raise ValueError(f"Incorrect creditials supplied for {self.username}")
         else:
             raise TypeError(f"{employee} is not an employee object!")
+
