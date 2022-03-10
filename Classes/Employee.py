@@ -109,6 +109,7 @@ class Employee(DBConnector):
         '''
 
         if (self.password not in [None, ''] and self.employeeName not in [None, ''] and self.username not in [None, '']):
+
             self._connect()
 
             sql = """
@@ -116,6 +117,7 @@ class Employee(DBConnector):
                 VALUES 
                 (?, ?, ?, ?, ?)
             """
+
 
             try:
                 self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
@@ -131,6 +133,16 @@ class Employee(DBConnector):
 
         elif (self.username in [None, '']):
             raise ValueError("Cannot add employee to database with blank username!")
+
+            self._cursor.execute(sql, (self.accessLevel, self.username, self.password, uuid.uuid4().hex, self.employeeName))
+            self._connection.commit()
+            print(f"[INFO] Added {self.username} to the database!")
+
+            self._disconnect()
+        
+        elif (self.employeeName == None):
+            raise ValueError("Cannot add employee to database with blank name!")
+
 
         else:
             raise ValueError("Cannot add employee to database with blank password!")
@@ -258,3 +270,4 @@ class Employee(DBConnector):
                 raise ValueError(f"Incorrect creditials supplied for {self.username}")
         else:
             raise TypeError(f"{employee} is not an employee object!")
+
