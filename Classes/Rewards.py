@@ -4,14 +4,18 @@ import os
 from configparser import ConfigParser
 
 class Reward(DBConnector):
-    def __init__(self, name: str, requirement: int, numRequired:int, expireDate:int, rewardType:str, priceReq:float=0.00, description = ""):
+    def __init__(self, name: str, expireDate:int, rewardType:str, numRequired:int=None, requirement:int=None, priceReq:float=0.00, description = ""):
         config = ConfigParser()
         config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
 
-        self.__config = config["MAIN"]
-        DBConnector.__init__(self, self.__config["DBname"])
+        DBConnector.__init__(self, "main")
 
         self.name = name
+        if (rewardType == "visit"):
+            self.requirement = 0
+        elif (rewardType == "item" and (requirement == None or numRequired == None)):
+            raise ValueError("Cannot leave requirement empty for item based reward!")
+
         self.requirement = requirement
         self.description = description
         self.numRequired = numRequired
@@ -28,15 +32,15 @@ class Reward(DBConnector):
             Used for debug to display all rewards that exist in the rewards table.
         '''
         numRewards = 0
-        self._connect()
-
+        
         sql = '''
             SELECT *
             FROM Reward
         '''
 
-        table = self._cursor.execute(sql).fetchall()
-
+        self._connect()
+        self._cursor.execute(sql)
+        table = self._cursor.fetchall()
         self._disconnect()
 
         for row in table:
@@ -51,16 +55,16 @@ class Reward(DBConnector):
         '''
 
         numRewards = 0
-        self._connect()
 
         sql = '''
             SELECT *
             FROM Reward
-            WHERE active = (?)
+            WHERE active = %s
         '''
 
-        table = self._cursor.execute(sql (1,)).fetchall()
-
+        self._connect()
+        self._cursor.execute(sql (1,))
+        table = self._cursor.fetchone()
         self._disconnect()
 
         for row in table:
@@ -74,15 +78,14 @@ class Reward(DBConnector):
             Used to get the customer information for verification.
         '''
 
-        self._connect()
-
         sql = """
             SELECT *
             FROM Reward
-            WHERE name = (?);
+            WHERE name = %s;
         """
-        info = self._cursor.execute(sql, (self.name,)).fetchone()
-
+        self._connect()
+        self._cursor.execute(sql, (self.name,))
+        info = self._cursor.fetchone()
         self._disconnect()
 
         return info
@@ -120,19 +123,21 @@ class Reward(DBConnector):
                 rewardInfo = (self.name, self.requirement, self.description, employee.username, 1, self.numRequired, self.getDate(), self.expiresOn, self.priceReq, self.rewardType)
 
                 try:
-                    self._connect()
+                    
 
                     sql = '''
                         INSERT INTO Reward(name, requirement, description, createdBy, active, numReq, createdOn, expireDate, priceReq, type) 
                             VALUES 
-                        ((?), (?), (?), (?), (?), (?), (?), (?), (?), (?))
+                        (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     '''
 
+                    self._connect()
                     self._cursor.execute(sql, rewardInfo)
                     self._connection.commit()
+                    self._disconnect()
                     print(f"[INFO] Added {self.name} to the database!")
 
-                    self._disconnect()
+                    
                 except Exception as e:
                     print(f"[ERROR] Error adding reward: {e}")
         
@@ -154,19 +159,18 @@ class Reward(DBConnector):
             rewardInfo = (0, self.name)
 
             try:
-                self._connect()
-
                 sql = '''
                     UPDATE Reward
-                    SET active = (?)
-                    WHERE name = (?)
+                    SET active = %s
+                    WHERE name = %s
                 '''
 
+                self._connect()
                 self._cursor.execute(sql, rewardInfo)
                 self._connection.commit()
-                print(f"[INFO] Disabled reward {self.name} in the database!")
-
                 self._disconnect()
+                print(f"[INFO] Disabled reward {self.name} in the database!")
+                
             except Exception as e:
                 print(f"[ERROR] Error disabling reward: {e}")
     
@@ -182,19 +186,21 @@ class Reward(DBConnector):
             rewardInfo = (1, self.name)
 
             try:
-                self._connect()
+                
 
                 sql = '''
                     UPDATE Reward
-                    SET active = (?)
-                    WHERE name = (?)
+                    SET active = %s
+                    WHERE name = %s
                 '''
 
+                self._connect()
                 self._cursor.execute(sql, rewardInfo)
                 self._connection.commit()
+                self._disconnect()
                 print(f"[INFO] Disabled reward {self.name} in the database!")
 
-                self._disconnect()
+                
             except Exception as e:
                 print(f"[ERROR] Error enabling reward: {e}")
     

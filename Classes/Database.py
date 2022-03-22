@@ -1,6 +1,4 @@
-import configparser as cp
 import os
-from shutil import copy
 from Classes.DBConnector import DBConnector
 
 class Database(DBConnector):
@@ -19,34 +17,30 @@ class Database(DBConnector):
             THIS SHOULD NOT BE TOUCHED OUTSIDE OF THE CLASS!!
         '''
 
-        setupFile = os.path.join(self._rootDir, self._folderLoc, f"{self._tableName}.sql")
+        setupFile = os.path.join(self._rootDir, self._dbName, f"{self._tableName}.sql")
+
+        if (self._dbName == "main"):
+            multi = True
+        elif (self._dbName == "auth"):
+            multi = False
 
         try:
             with open(setupFile, 'r') as contents:
-                self._connection.executescript(contents.read())
+                self._connect()
+                self._cursor.execute(contents.read(), multi=multi)
+                self._disconnect()
                 print("[INFO] Setup successfully ran.")
         except Exception as e:
             print(f"[ERROR] Setup unsuccessful: {e}")
 
-    def backup(self):
-        '''
-            This method backs the database up.
-        '''
+        if (self._dbName == "main"):
+            self._connect()
+            self._cursor.execute("INSERT IGNORE INTO Inventory (name, SKU, price, count) VALUES ('Visit', 0, 0.00, 1)")
+            self._connection.commit()
+            self._disconnect()
 
+    #def backup(self):
 
-        from datetime import datetime
-
-        now = datetime.now()
-        timeTag = str(now).replace('-', '').replace(' ', '_').replace(':', '').split('.')[0]
-        timeTagSplit = timeTag.split('_')
-        backupFileName = self._dbName + timeTagSplit[1] + ".db"
-        backupFolderName = os.path.join(self._rootDir, self._folderLoc, "Backups", timeTagSplit[0])
-
-        if (not os.path.isdir(backupFolderName)):
-            os.mkdir(backupFolderName)
-
-        copy(self._dbLoc, os.path.join(self._rootDir, self._dbName, "Backups", timeTagSplit[0], backupFileName))
-        print("[INFO] Backed up database!")
 
     def initialize(self):
         '''
@@ -54,16 +48,6 @@ class Database(DBConnector):
             Takes no parameters and returns itself.
         '''
 
-        self._connect()
         self.__setup()
 
         return self
-
-    def __del__(self):
-        '''
-            This private method is the destructor for the Database class.\n
-            THIS SHOULD NOT BE TOUCHED OUTSIDE OF THE CLASS!!
-        '''
-
-        if (self._connection != None):
-            self._disconnect()

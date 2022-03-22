@@ -3,43 +3,42 @@ from Classes.Customer import Customer
 from Classes.Item import Item
 from Classes.Employee import Employee
 from Classes.Rewards import Reward
-from GUI import *
-import sys
+from Classes.DBConnector import DBConnector
 
 if __name__ == "__main__":
     # This is all sample code!!
+    
+    #DBConnector("main")._deleteDBs()
 
     authDB = Database(dbSelection="auth").initialize()
     mainDB = Database(dbSelection="main").initialize()
-
-
-    item = Item(name="Bread", SKU=809876768789, price=1.32, count=2)
-    item.storeItem()
-
-    emp = Employee(username="admin", password="admin")
-    emp.createAccount()
-
-    newReward = Reward(name="Free Meal", requirement=0, numRequired=5, rewardType="visit", description="This is a free meal after 5 meals.", expireDate=20220325) # Finish Testing
-    newReward.createReward(emp)
-
-    newReward1 = Reward(name="Free Bread", requirement=809876768789, rewardType="price", priceReq=20, numRequired=2, description="This is a free bread after bread purchases.",expireDate=20220325) # Finish Testing
-    newReward1.createReward(emp)
-
-    cust = Customer(name="SampleCustomer", DOB=20220309, phone=5054769254)
-    cust.createAccount()
-
-    cust.addItemToCart(item)
-    cust.checkout()
-    cust.getPurchaseHistory()
-    #Create PyQt5 app
-    app = QtWidgets.QApplication(sys.argv)
-    #Create instance of window
-    window = Login()
-    #Start the app
-    sys.exit(app.exec_())
     
-    #superUser = Employee(username="admin", password="admin1", employeeName="SuperUser", accessLevel=1)
-    #superUser.createAccount()
+    #item = Item(name="Bread", SKU=809876, price=1.32, count=10)
+    #item.storeItem()
+    #item.displayTable()
 
-    #tmp = Employee(username="hunter", password="admin1", employeeName="SuperUser", accessLevel=0)
-    #tmp.createAccount()
+    #emp = Employee(username="admin", password="ttt", employeeName="SuperUser", accessLevel=10)
+    #emp.createAccount()
+    #emp.displayTable()
+    #emp.verifyLogin()
+    #emp.changePassword("tttt")
+    #emp.displayTable()
+    #emp.displayTable()
+    #emp = Employee(username="admin", password="admin")
+    
+    #newReward = Reward(name="Free Meal", requirement=0, numRequired=5, rewardType="visit", description="This is a free meal after 5 meals.", expireDate=20220325) # Finish Testing
+    #newReward.createReward(emp)
+    
+    #newReward1 = Reward(name="Free Bread", requirement=809876, rewardType="price", priceReq=20, numRequired=2, description="This is a free bread after bread purchases.",expireDate=20220325) # Finish Testing
+    #newReward1.createReward(emp)
+    
+    #cust = Customer(name="SampleCustomer", DOB=20220309, phone=5054769254)
+    #cust.createAccount()
+    
+    #item = Item(SKU=809876, count=3)
+    
+    #cust.addItemToCart(item)
+    #cust.checkout()
+    #cust.getPurchaseHistory()
+    
+    #item.displayTable()
