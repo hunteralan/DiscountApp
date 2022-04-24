@@ -1,6 +1,5 @@
 import hashlib
 import hmac
-from typing import ValuesView
 import uuid
 from configparser import ConfigParser
 import os
@@ -21,11 +20,12 @@ class Employee(DBConnector):
                 {accessLevel}: In order to perform operations on other employees, accessLevel must be both greater than \n
                     \tthe employee to be operated on as well as above the admin threshold set in db.conf
         '''
-        config = ConfigParser()
-        config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
+        self._config = ConfigParser()
+        self._config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
 
-        self.__config = config["AUTH"]
-        DBConnector.__init__(self, self.__config["DBname"])
+        self._config = self._config["AUTH"]
+
+        DBConnector.__init__(self, "auth")
 
         self.username = username
 
@@ -36,44 +36,42 @@ class Employee(DBConnector):
         else:
             self.employeeName = employeeName
             self.accessLevel = accessLevel
-            self.salt = uuid.uuid4().hex.encode()
+            self.salt = uuid.uuid4().hex
 
         if (password != None):
-            passwordHash = hashlib.pbkdf2_hmac("sha256", password.encode(), self.salt, 100000)
+            passwordHash = hashlib.pbkdf2_hmac("sha256", str(password).encode(), str(self.salt).encode(), 100000)
             self.password = passwordHash
 
-    def displayTable(self):
+    def getEmployees(self):
         '''
             Used for debug purposes to show the entire Employee database table.
         '''
-
-        self._connect()
 
         sql = """
             SELECT *
             FROM Employee;
         """
-        table = self._cursor.execute(sql).fetchall()
-
+        self._connect()
+        self._cursor.execute(sql)
+        table = self._cursor.fetchall()
         self._disconnect()
 
-        for row in table:
-            print(row)
+        return table
 
     def __getEmployeeInfo(self):
         '''
             Used to get the employee information for verification.
         '''
 
-        self._connect()
-
         sql = """
             SELECT *
             FROM Employee
-            WHERE username = (?);
+            WHERE username = %s;
         """
-        info = self._cursor.execute(sql, (self.username,)).fetchone()
 
+        self._connect()
+        self._cursor.execute(sql, (self.username,))
+        info = self._cursor.fetchone()
         self._disconnect()
 
         return info
@@ -87,7 +85,6 @@ class Employee(DBConnector):
         verified = False
 
         employeeInfo = self.__getEmployeeInfo()
-        
         if (employeeInfo != None and employeeInfo[1] == self.username and hmac.compare_digest(self.password, employeeInfo[2])):
             verified = True
 
@@ -113,32 +110,36 @@ class Employee(DBConnector):
             Will not work if you attempt to add an existing employee or supply the employee with no password.
         '''
 
-        if (self.password not in [None, ''] and self.employeeName not in [None, ''] and self.username not in [None, '']):
+        numEmployees = len(self.getEmployees())
 
-            self._connect()
+        if (numEmployees == 0):
+            self.accessLevel = 10
+
+        if (self.password not in [None, ''] and self.employeeName not in [None, ''] and self.username not in [None, '']):
 
             sql = """
                 INSERT INTO Employee (accessLevel, username, password, salt, name)
                 VALUES 
-                (?, ?, ?, ?, ?)
+                (%s, %s, %s, %s, %s)
             """
+
+            self._connect()
 
             try:
                 self._cursor.execute(sql, (self.accessLevel, self.username, self.password, self.salt, self.employeeName))
-
                 self._connection.commit()
                 print(f"[INFO] Added {self.username} to the database!")
             except Exception:
                 raise ValueError(f"User already exists!")
 
             self._disconnect()
+            
         
         elif (self.employeeName in [None, '']):
             raise ValueError("Cannot add employee to database with blank name!")
 
         elif (self.username in [None, '']):
             raise ValueError("Cannot add employee to database with blank username!")
-
 
         else:
             raise ValueError("Cannot add employee to database with blank password!")
@@ -153,7 +154,7 @@ class Employee(DBConnector):
                 {employee}: this is the Employee object with the supplied username you wish to remove. Does not require user to be removed's password.
         '''
 
-        self._connect()
+        
 
         if (type(employee) != Employee):
             raise TypeError(f"{employee} is not a proper Employee!")
@@ -167,14 +168,14 @@ class Employee(DBConnector):
             sql = """
                 DELETE 
                 FROM Employee
-                WHERE username = (?)
+                WHERE username = %s
             """
 
+            self._connect()
             self._cursor.execute(sql, (employee.username,))
             self._connection.commit()
-            print(f"[INFO] Removed {employee.username} from the database!")
-
             self._disconnect()
+            print(f"[INFO] Removed {employee.username} from the database!")
 
     def changePassword(self, newPassword, employee=None):
         '''
@@ -188,35 +189,43 @@ class Employee(DBConnector):
         '''
 
         if (employee==None and self.verifyLogin() and self.checkExists()): # Logic if user wants to change own password
-            self._connect()
+            
+            empInfo = self.__getEmployeeInfo()
 
+            tmp = Employee(username=empInfo[1], password=newPassword, accessLevel=10, employeeName=empInfo[4])
+            
             sql = """
                 UPDATE Employee
-                SET password = (?)
-                WHERE username = (?)
+                SET password = %s
+                WHERE username = %s
             """
 
-            self._cursor.execute(sql, (newPassword, self.username,))
+            self._connect()
+            self._cursor.execute(sql, (tmp.password, self.username,))
             self._connection.commit()
+            self._disconnect()
             print(f"[INFO] Changed {self.username}'s password in the database!")
             self.password = newPassword
 
-            self._disconnect()
+            
         elif (type(employee) == Employee and employee.checkExists() and employee.accessLevel < self.accessLevel and self.accessLevel >= int(self._config["accessLevel_admin_priv"])): # Logic if another employee wants to change anothers password
-            self._connect()
 
+            empInfo = employee.__getEmployeeInfo()
+            tmp = Employee(username=empInfo[1], password=newPassword, accessLevel=10, employeeName=empInfo[4])
+            
             sql = """
                 UPDATE Employee
-                SET password = (?)
-                WHERE username = (?)
+                SET password = %s
+                WHERE username = %s
             """
 
-            self._cursor.execute(sql, (newPassword, employee.username,))
+            self._connect()
+            self._cursor.execute(sql, (tmp.password, employee.username,))
             self._connection.commit()
+            self._disconnect()
             print(f"[INFO] Changed {employee.username}'s password in the database!")
             self.password = newPassword
-
-            self._disconnect()
+            
         elif (type(employee) == Employee and employee.accessLevel >= self.accessLevel):
             raise ValueError("Cannot change the password of a user! (Higher management)")
         elif (type(employee) == Employee and self.accessLevel < int(self._config["accessLevel_admin_priv"])):
@@ -238,21 +247,24 @@ class Employee(DBConnector):
                     raise ValueError(f"Cannot promote an employee to higher rank than yourself!")
 
                 elif (type(employee) == Employee and self.accessLevel > employee.accessLevel and employee.checkExists() and self.accessLevel >= int(self._config["accessLevel_admin_priv"])):
-                    self._connect()
+                    
                     
                     info = employee.__getEmployeeInfo()
 
                     sql = '''
                         UPDATE Employee
-                        SET accessLevel = (?)
-                        WHERE username = (?)
+                        SET accessLevel = %s
+                        WHERE username = %s
                     '''
+
+                    self._connect()
                     self._cursor.execute(sql, (newLevel, employee.username,))
                     self._connection.commit()
+                    self._disconnect()
                     print(f"[INFO] Changed {employee.username}'s access level in the database!")
                     self.accessLevel = newLevel
 
-                    self._disconnect()
+                    
 
                 elif (self.accessLevel <= employee.accessLevel):
                     raise ValueError("Cannot promote a user in a higher or equivelent position")
@@ -266,4 +278,3 @@ class Employee(DBConnector):
                 raise ValueError(f"Incorrect creditials supplied for {self.username}")
         else:
             raise TypeError(f"{employee} is not an employee object!")
-

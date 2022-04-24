@@ -4,19 +4,19 @@ from Classes.DBConnector import DBConnector
 
 
 class Item(DBConnector):
-    def __init__(self, SKU, name="", price=0.00, count=1):
+    def __init__(self, SKU, name="", price=0.00, count=1, ageRequired=0):
         config = ConfigParser()
         config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
 
-        self.__config = config["MAIN"]
-        DBConnector.__init__(self, self.__config["DBname"])
+        DBConnector.__init__(self, "main")
 
         self.name = name
         self.SKU = SKU
         self.price = price
+        self.ageRequired = ageRequired
 
-        if (count <= 0):
-            raise ValueError("Cannot add zero or negative number of items!")
+        if (count == 0):
+            raise ValueError("Cannot add zero number of items!")
         else:
             self.count = count
 
@@ -25,34 +25,35 @@ class Item(DBConnector):
             Used for debug purposes to show the entire Employee database table.
         '''
 
-        self._connect()
-
         sql = """
             SELECT *
-            FROM Inventory;
+            FROM Inventory
         """
-        table = self._cursor.execute(sql).fetchall()
-
+        self._connect()
+        self._cursor.execute(sql)
+        table = self._cursor.fetchall()
         self._disconnect()
 
         for row in table:
             print(row)
 
-    def __getItemInfo(self):
+        return table
+
+    def _getItemInfo(self):
         '''
             Used to get the customer information for verification.
         '''
 
-        self._connect()
-
         sql = """
             SELECT *
             FROM Inventory
-            WHERE SKU = (?);
+            WHERE SKU = %s;
         """
-        info = self._cursor.execute(sql, (self.SKU,)).fetchone()
-
+        self._connect()
+        self._cursor.execute(sql, (self.SKU,))
+        info = self._cursor.fetchone()
         self._disconnect()
+        print(info)
 
         return info
 
@@ -62,7 +63,7 @@ class Item(DBConnector):
             Used to check if employee with the supplied username exists.
         '''
 
-        exists = self.__getItemInfo()
+        exists = self._getItemInfo()
 
         if (exists != None):
             exists = True
@@ -78,23 +79,22 @@ class Item(DBConnector):
 
         if (not self.checkExists()):
             sql = '''
-                INSERT INTO Inventory(name, SKU, price, count) 
+                INSERT INTO Inventory(name, SKU, price, count, ageRequired) 
                     VALUES 
-                ((?), (?), (?), (?))
+                (%s, %s, %s, %s, %s)
             '''
 
-            itemInfo = (self.name, self.SKU, self.price, self.count)
+            itemInfo = (self.name, self.SKU, self.price, self.count, self.ageRequired)
         else:
             sql = '''
                 UPDATE Inventory
-                SET count = (?) + (?)
-                WHERE SKU = (?)
+                SET count = %s + %s
+                WHERE SKU = %s
             '''
 
-            itemInfo = (self.__getItemInfo()[3], self.count, self.SKU)
+            itemInfo = (self._getItemInfo()[3], self.count, self.SKU)
 
         self._connect()
-
         try:
             self._cursor.execute(sql, itemInfo)
             self._connection.commit()
@@ -102,5 +102,4 @@ class Item(DBConnector):
 
         except Exception as e:
             print(f"[ERROR] Error adding item to Inventory: {e}")
-
         self._disconnect()
