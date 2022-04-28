@@ -142,11 +142,6 @@
            <string>Manager</string>
           </property>
          </item>
-         <item>
-          <property name="text">
-           <string>Owner</string>
-          </property>
-         </item>
         </widget>
        </item>
        <item>

@@ -391,23 +391,27 @@ class addMember(QMainWindow):
             self.close()
 
     def updateFields (self):
-        global memData
-        #print("Entering updateFields")
-        data = memData
+        try:
+            global memData
+            #print("Entering updateFields")
+            data = memData
 
-        self.name.setText(str(data[0]) + " " + str(data[1]))
-        self.DLN.setText(str(data[2]))
+            self.name.setText(str(data[0]) + " " + str(data[1]))
+            self.DLN.setText(str(data[2]))
 
-        year = data[4][4:]
-        print(year)
-        day = data[4][2:4]
-        print(day)
+            year = data[4][4:]
+            print(year)
+            day = data[4][2:4]
+            print(day)
 
-        month = data[4][0:2]
-        print(month)
+            month = data[4][0:2]
+            print(month)
 
-        birthday = QDate(int(year), int(month), int(day))
-        self.dateEdit.setDate(birthday)
+            birthday = QDate(int(year), int(month), int(day))
+            self.dateEdit.setDate(birthday)
+        except Exception as e:
+            self.errMsg.setText("Error scanning license, try again!")
+            self.errMsg.setStyleSheet("color: red")
 
     def onCancelAddMember (self):
         if (currentlyLoggedIn.accessLevel > 0):
@@ -429,46 +433,50 @@ class testScan(QMainWindow):
         self.returnBtn.clicked.connect(self.onReturn)
 
     def exit_app(self):
-        scanString = self.plainTextEdit.toPlainText()
-        #print(scanString)
+        try:
+            scanString = self.plainTextEdit.toPlainText()
+            #print(scanString)
 
-        info = []
-        for lns in scanString.splitlines():
-            #Prefixes may not be the same for each state
-               #print(lns)
-            index = lns.find("DAQ")
-            print(index)
-            if (index != -1):
-                print(lns[index:])
-                DLN = lns[index:]
-                #info.append(lns[index:])
-            if lns.startswith("DAC"):
-               print(lns)
-               firstName = lns
-               #info.append(lns)
-            elif lns.startswith("DCS"):
-                print(lns)
+            info = []
+            for lns in scanString.splitlines():
+                #Prefixes may not be the same for each state
+                #print(lns)
+                index = lns.find("DAQ")
+                print(index)
+                if (index != -1):
+                    print(lns[index:])
+                    DLN = lns[index:]
+                    #info.append(lns[index:])
+                if lns.startswith("DAC"):
+                    print(lns)
+                    firstName = lns
                 #info.append(lns)
-                lastName = lns
-            elif lns.startswith("DAJ"):
-                print(lns)
-                #info.append(lns)
-                state = lns
-            elif lns.startswith("DBB"):
-                print(lns)
-                #info.append(lns)
-                DOB = lns
-        info = [firstName, lastName, DLN, state, DOB]
+                elif lns.startswith("DCS"):
+                    print(lns)
+                    #info.append(lns)
+                    lastName = lns
+                elif lns.startswith("DAJ"):
+                    print(lns)
+                    #info.append(lns)
+                    state = lns
+                elif lns.startswith("DBB"):
+                    print(lns)
+                    #info.append(lns)
+                    DOB = lns
+            info = [firstName, lastName, DLN, state, DOB]
 
-        global memData
-        #print(memData)
-        self.slimDown(info)
-        #print(memData)
-        memData = info
-        print(memData)
-        #print(memData)
-        self.widget = addMember()
-        self.close()
+            global memData
+            #print(memData)
+            self.slimDown(info)
+            #print(memData)
+            memData = info
+            print(memData)
+            #print(memData)
+            self.widget = addMember()
+            self.close()
+        except Exception as e:
+            self.widget = addMember()
+            self.close()
 
     #Sourced from geeksforgeeks.org; generic swap function
     def swapPositions(self,list, pos1, pos2): 
@@ -657,8 +665,6 @@ class addDiscount(QMainWindow):
         self.close()
 
     def changeType (self, s):
-        print(s)
-
         if (s == "Visit"):
             self.priceLabel.hide()
             self.priceBox.hide()
@@ -675,6 +681,8 @@ class addDiscount(QMainWindow):
         
         if (s == "Item"):
             self.sku.show()
+            self.quantityLabel.hide()
+            self.quantityBox.hide()
             self.priceLabel.hide()
             self.priceBox.hide()
 
@@ -797,7 +805,6 @@ class modifyEmpAccess(QMainWindow):
         self.showMaximized()
 
         global employeeData
-        print(employeeData)
         index = 1
         for employee in employeeData:
             self.employeeList.insertItem(index, str(employee[1]))
@@ -811,10 +818,6 @@ class modifyEmpAccess(QMainWindow):
 
     def onSubmit (self):
         username = self.employeeList.currentText()
-        #print(username)
-
-        accessLevel = self.accessLevel.currentText()
-        #print(accessLevel)
 
         if (self.accessLevel.currentIndex() == 0):
             self.errMsg.setText("Select an Access Level!")
@@ -1015,7 +1018,6 @@ class viewCart(QMainWindow):
             print(selectedMember.cart)
 
             tableIndex = 0
-            counter = 0
             self.tableWidget.setRowCount(len(cartData))
             if (len(cartData) == 0):
                 self.errMsg.setText("Cart is empty!")
@@ -1125,10 +1127,6 @@ class viewItems(QMainWindow):
             tableIndex = 0
 
             for row in data:
-                #print(row[0]) #name
-                #print(row[1]) #SKU
-                #print(row[2]) #Price
-
                 self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
                 self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
                 self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
@@ -1158,7 +1156,6 @@ class viewItems(QMainWindow):
                 for row in data:
                     results = (str(row[filterBy - 1]).lower()).find(searchFor)
                     if (results != -1):
-                        print(row)
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
                         self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
                         self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
