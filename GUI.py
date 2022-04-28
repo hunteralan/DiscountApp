@@ -681,8 +681,8 @@ class addDiscount(QMainWindow):
         
         if (s == "Item"):
             self.sku.show()
-            self.quantityLabel.hide()
-            self.quantityBox.hide()
+            self.quantityLabel.show()
+            self.quantityBox.show()
             self.priceLabel.hide()
             self.priceBox.hide()
 
