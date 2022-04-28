@@ -1,5 +1,6 @@
 from datetime import datetime
 from configparser import ConfigParser
+from multiprocessing.sharedctypes import Value
 import os
 from Classes.DBConnector import DBConnector
 from Classes.Item import Item
@@ -26,6 +27,20 @@ class Customer(DBConnector):
         self.DLN = DLN
         self.email = email
         self.cart = []
+
+    def getAge(self):
+        todaysDate = self._getDate()
+
+        curYear = todaysDate // 10000
+        birthYear = self.DOB // 10000
+
+        curMonth = (todaysDate % 1000) // 100
+        birthMonth = (self.DOB % 1000) // 100
+
+        curDay = todaysDate % 100
+        birthDay = self.DOB % 100
+
+        return curYear - birthYear - ((curMonth, curDay) < (birthMonth, birthDay))
 
     def _getDate(self):
         '''
@@ -123,6 +138,8 @@ class Customer(DBConnector):
         for row in table:
             print(row)
 
+        return table
+
 
     def addItemToCart(self, item):
         '''
@@ -131,11 +148,16 @@ class Customer(DBConnector):
 
         if (type(item) != Item):
             raise TypeError(f"{item} is not an Item object!")
+        elif (int(item.ageRequired) > self.getAge()):
+            raise ValueError(f"Member is not old enough to purchase this item!")
+        elif (item._getItemInfo() == None):
+            raise ValueError(f"Cannot add item to cart! Is not stored in inventory!")
         else:
             SKUList = [x.SKU for x in self.cart]
+
         if (item.SKU in SKUList):
             itemIdx = SKUList.index(item.SKU)
-            self.cart[itemIdx] = self.cart[itemIdx].count + item.count
+            self.cart[itemIdx].count = self.cart[itemIdx].count + item.count
         else:
             self.cart.append(item)
 
@@ -143,15 +165,17 @@ class Customer(DBConnector):
         '''
             Clear the customers shopping cart.
         '''
-        self.cart = {}
+        self.cart = []
 
     def visit(self):
         '''
             Adds a visit to the customers purchase history.
         '''
 
+        saveCart = self.cart
         self.addItemToCart(Item(0))
         self.checkout()
+        self.cart = saveCart
         print(f"Added a customer visit!!")
 
     def displayCart(self):
@@ -160,6 +184,8 @@ class Customer(DBConnector):
         '''
         for item in self.cart:
             print(f"{item.SKU}:{item.name} - {item.count}")
+
+        return self.cart
 
     def _checkBoughtSpecificItem(self, item):
         '''
@@ -216,46 +242,33 @@ class Customer(DBConnector):
             (%s, %s, %s, %s, %s)
         '''
         for item in self.cart:
-            if (item.checkExists()):
-                itemInfo = item._getItemInfo()
-            else:
-                raise ValueError(f"Can't buy an item that does not exist!")
+            if ((item._getItemInfo()[3] + (item.count * -1)) >= 0):
+                if (item.checkExists()):
+                    itemInfo = item._getItemInfo()
+                else:
+                    raise ValueError(f"Can't buy an item that does not exist!")
 
-            if (self._checkBoughtSpecificItem(item)):
-                print("Updating! Youve bought this before!!!!!!")
-                self._updateItemPurchase(item)
+                if (self._checkBoughtSpecificItem(item)):
+                    print("Updating! Youve bought this before!!!!!!")
+                    self._updateItemPurchase(item)
+                else:
+                    try:
+                        print("Adding! Youve never bought this before!!!!!!")
+                        self._connect()
+                        self._cursor.execute(sql, (self.phone, item.SKU, item.count, self._getDate(), (itemInfo[2] * item.count)))
+                        self._connection.commit()
+                        self._disconnect()
+                    except Exception as e:
+                        print(f"[ERROR] Unsuccessful in checking out: {e}")
+                self._addAvailableRewards(item)
+                
+                if (item.SKU != 0):
+                    Item(SKU=item.SKU, count=(-1 * item.count)).storeItem()
             else:
-                try:
-                    print("Adding! Youve never bought this before!!!!!!")
-                    self._connect()
-                    self._cursor.execute(sql, (self.phone, item.SKU, item.count, self._getDate(), (itemInfo[2] * item.count)))
-                    self._connection.commit()
-                    self._disconnect()
-                except Exception as e:
-                    print(f"[ERROR] Unsuccessful in checking out: {e}")
-            self._addAvailableRewards(item)
-            Item(SKU=item.SKU, count=(-1 * item.count)).storeItem()
+                raise ValueError("Cannot buy this item! Buying more than the inventory contains!")
 
         
-        self.cart = []
-
-    def displayAllPurchaseTable(self):
-        '''
-            Used for debug purposes to show the entire purchaseHistory database table.
-        '''
-
-        sql = """
-            SELECT *
-            FROM purchaseHistory;
-        """
-
-        self._connect()
-        self._cursor.execute(sql)
-        table = self._cursor.fetchall()
-        self._disconnect()
-
-        for row in table:
-            print(row)
+        self.clearCart()
 
     def getPurchaseHistory(self):
         '''
@@ -273,7 +286,7 @@ class Customer(DBConnector):
 
             self._connect()
             self._cursor.execute(sql, (custInfo[2],))
-            table = self._cursor.fetchone()
+            table = self._cursor.fetchall()
             self._disconnect()
 
             for row in table:
@@ -339,3 +352,27 @@ class Customer(DBConnector):
 
         for row in results:
             print(row)
+
+        return results
+
+    def redeemReward(self, rewardVerificationID):
+        success = True
+
+        try:
+            sql = '''
+                DELETE
+                FROM hasReward
+                WHERE rewardVerifyID = %s
+                    AND phone = %s
+            '''
+
+            query = (rewardVerificationID, self.phone)
+
+            self._connect()
+            self._cursor.execute(sql, query)
+            self._connection.commit()
+            self._disconnect()
+        except:
+            success = False
+
+        return success

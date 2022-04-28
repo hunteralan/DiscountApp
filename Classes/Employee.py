@@ -20,8 +20,10 @@ class Employee(DBConnector):
                 {accessLevel}: In order to perform operations on other employees, accessLevel must be both greater than \n
                     \tthe employee to be operated on as well as above the admin threshold set in db.conf
         '''
-        config = ConfigParser()
-        config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
+        self._config = ConfigParser()
+        self._config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
+
+        self._config = self._config["AUTH"]
 
         DBConnector.__init__(self, "auth")
 
@@ -40,7 +42,7 @@ class Employee(DBConnector):
             passwordHash = hashlib.pbkdf2_hmac("sha256", str(password).encode(), str(self.salt).encode(), 100000)
             self.password = passwordHash
 
-    def displayTable(self):
+    def getEmployees(self):
         '''
             Used for debug purposes to show the entire Employee database table.
         '''
@@ -54,8 +56,7 @@ class Employee(DBConnector):
         table = self._cursor.fetchall()
         self._disconnect()
 
-        for row in table:
-            print(row)
+        return table
 
     def __getEmployeeInfo(self):
         '''
@@ -108,6 +109,11 @@ class Employee(DBConnector):
             Used to add this employee to the database with the supplied credentials.\n
             Will not work if you attempt to add an existing employee or supply the employee with no password.
         '''
+
+        numEmployees = len(self.getEmployees())
+
+        if (numEmployees == 0):
+            self.accessLevel = 10
 
         if (self.password not in [None, ''] and self.employeeName not in [None, ''] and self.username not in [None, '']):
 

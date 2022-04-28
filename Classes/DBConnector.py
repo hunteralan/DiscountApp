@@ -24,6 +24,8 @@ class DBConnector:
 
         self._host = config["IP"]["host"]
         self._port = config["IP"]["port"]
+        self._pass = config["GENERIC DB"]["password"]
+        self._user = config["GENERIC DB"]["username"]
 
     def _resetCur(self):
         self._cursor = self._connection.cursor(buffered=True)
@@ -35,7 +37,16 @@ class DBConnector:
         '''
 
         try:
-            self._connection = mc.connect(user='dbConnector', database=self._dbName, password='root1234', host=self._host, port=self._port)
+            self._connection = mc.connect(user='dbConnector', password='root1234', host=self._host, port=self._port)
+            self._resetCur()
+            self._cursor.execute(f"CREATE DATABASE {self._dbName}")
+            self._connection.close()
+            self._cursor.close()
+        except:
+            None
+
+        try:
+            self._connection = mc.connect(user=self._user, database=self._dbName, password=self._pass, host=self._host, port=self._port)
             self._resetCur()
             print("[INFO] Connection successfully established.")
         except Exception as e:

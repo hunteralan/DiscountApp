@@ -19,15 +19,12 @@ class Database(DBConnector):
 
         setupFile = os.path.join(self._rootDir, self._dbName, f"{self._tableName}.sql")
 
-        if (self._dbName == "main"):
-            multi = True
-        elif (self._dbName == "auth"):
-            multi = False
-
         try:
             with open(setupFile, 'r') as contents:
                 self._connect()
-                self._cursor.execute(contents.read(), multi=multi)
+
+                for line in contents.readlines():
+                    self._cursor.execute(line)
                 self._disconnect()
                 print("[INFO] Setup successfully ran.")
         except Exception as e:
@@ -38,9 +35,6 @@ class Database(DBConnector):
             self._cursor.execute("INSERT IGNORE INTO Inventory (name, SKU, price, count) VALUES ('Visit', 0, 0.00, 1)")
             self._connection.commit()
             self._disconnect()
-
-    #def backup(self):
-
 
     def initialize(self):
         '''

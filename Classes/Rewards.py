@@ -47,7 +47,7 @@ class Reward(DBConnector):
             print(row)
             numRewards += 1
 
-        return numRewards
+        return table
 
     def displayActiveRewards(self):
         '''
@@ -198,7 +198,7 @@ class Reward(DBConnector):
                 self._cursor.execute(sql, rewardInfo)
                 self._connection.commit()
                 self._disconnect()
-                print(f"[INFO] Disabled reward {self.name} in the database!")
+                print(f"[INFO] Enabled reward {self.name} in the database!")
 
                 
             except Exception as e:
@@ -206,3 +206,38 @@ class Reward(DBConnector):
     
         else:
             print("Cannot enable nonexisting reward!")
+
+    def isActive(self):
+        '''
+            Checks if a specific reward is active
+        '''
+
+        if (self.checkExists()):
+            rewardInfo = (self.name,)
+            active = False
+
+            try:
+                
+                sql = '''
+                    SELECT active
+                    FROM Reward
+                    WHERE name = (%s)
+                '''
+
+                self._connect()
+                self._cursor.execute(sql, rewardInfo)
+                result = self._cursor.fetchone()[0]
+                self._disconnect()
+
+                print(result)
+
+                if (result == 1):
+                    active = True
+                
+            except Exception as e:
+                print(f"[ERROR] Error checking reward: {e}")
+
+            return active
+    
+        else:
+            raise ValueError("Cannot check nonexisting reward for active status!")

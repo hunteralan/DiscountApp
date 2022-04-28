@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>873</width>
+    <width>822</width>
     <height>569</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>Limitless Loyalty</string>
   </property>
   <property name="styleSheet">
    <string notr="true">background-color: rgb(93, 103, 90);</string>
@@ -96,15 +96,28 @@
         </widget>
        </item>
        <item>
+        <spacer name="horizontalSpacer_9">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item>
         <widget class="QLabel" name="label_2">
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>16</pointsize>
           </font>
          </property>
          <property name="text">
-          <string>Administrator Central Page</string>
+          <string>  Administrator Control Panel  </string>
          </property>
          <property name="alignment">
           <set>Qt::AlignCenter</set>
@@ -153,7 +166,7 @@
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -163,6 +176,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>View Members</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -176,7 +192,7 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -186,6 +202,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>Add Member</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -212,7 +231,7 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -222,6 +241,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>View Items</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -235,7 +257,7 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -245,6 +267,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>Add Item</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -271,7 +296,7 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -281,6 +306,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>View Discounts</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -294,7 +322,7 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -304,6 +332,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>Add Discounts</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -324,7 +355,7 @@ color: rgb(255, 255, 255);</string>
         <widget class="QPushButton" name="changeEmpBtn">
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -334,6 +365,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>Employee Information</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>
@@ -360,7 +394,7 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="font">
           <font>
-           <family>Times New Roman</family>
+           <family>Bell MT</family>
            <pointsize>12</pointsize>
           </font>
          </property>
@@ -370,6 +404,9 @@ color: rgb(255, 255, 255);</string>
          </property>
          <property name="text">
           <string>Log Out</string>
+         </property>
+         <property name="default">
+          <bool>true</bool>
          </property>
         </widget>
        </item>

@@ -4,7 +4,7 @@ from Classes.DBConnector import DBConnector
 
 
 class Item(DBConnector):
-    def __init__(self, SKU, name="", price=0.00, count=1):
+    def __init__(self, SKU, name="", price=0.00, count=1, ageRequired=0):
         config = ConfigParser()
         config.read(os.path.join(os.path.join(os.getcwd(), "Database"), "db.conf"))
 
@@ -13,6 +13,7 @@ class Item(DBConnector):
         self.name = name
         self.SKU = SKU
         self.price = price
+        self.ageRequired = ageRequired
 
         if (count == 0):
             raise ValueError("Cannot add zero number of items!")
@@ -36,6 +37,8 @@ class Item(DBConnector):
         for row in table:
             print(row)
 
+        return table
+
     def _getItemInfo(self):
         '''
             Used to get the customer information for verification.
@@ -50,7 +53,6 @@ class Item(DBConnector):
         self._cursor.execute(sql, (self.SKU,))
         info = self._cursor.fetchone()
         self._disconnect()
-        print(info)
 
         return info
 
@@ -76,12 +78,12 @@ class Item(DBConnector):
 
         if (not self.checkExists()):
             sql = '''
-                INSERT INTO Inventory(name, SKU, price, count) 
+                INSERT INTO Inventory(name, SKU, price, count, ageRequired) 
                     VALUES 
-                (%s, %s, %s, %s)
+                (%s, %s, %s, %s, %s)
             '''
 
-            itemInfo = (self.name, self.SKU, self.price, self.count)
+            itemInfo = (self.name, self.SKU, self.price, self.count, self.ageRequired)
         else:
             sql = '''
                 UPDATE Inventory
@@ -100,5 +102,3 @@ class Item(DBConnector):
         except Exception as e:
             print(f"[ERROR] Error adding item to Inventory: {e}")
         self._disconnect()
-
-        
