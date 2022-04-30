@@ -386,7 +386,7 @@ color: rgb(255, 255, 255);</string>
         <widget class="QLineEdit" name="searchBox">
          <property name="font">
           <font>
-           <family>Bell MT</family>
+           <family>MS Shell Dlg 2</family>
            <pointsize>10</pointsize>
           </font>
          </property>
