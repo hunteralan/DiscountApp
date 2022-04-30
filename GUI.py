@@ -681,7 +681,7 @@ class modifyEmployee(QMainWindow):
         self.close()
 
     def onDeleteEmp (self):
-        self.widget = deleteEmployee()
+        self.widget = viewEmployees()
         self.close()
 
     def onCancel (self):
@@ -700,8 +700,8 @@ class modifyEmployeeManager(QMainWindow):
         self.changePass = self.findChild(QtWidgets.QPushButton, 'changePassBtn')
         self.changePass.clicked.connect(self.onChangePass)
 
-        self.deleteEmp = self.findChild(QtWidgets.QPushButton, 'deleteEmpBtn')
-        self.deleteEmp.clicked.connect(self.onDeleteEmp)
+        self.viewEmp = self.findChild(QtWidgets.QPushButton, 'deleteEmpBtn')
+        self.viewEmp.clicked.connect(self.onViewEmp)
 
         self.cancel = self.findChild(QtWidgets.QPushButton, 'cancelBtn')
         self.cancel.clicked.connect(self.onCancel)
@@ -710,8 +710,8 @@ class modifyEmployeeManager(QMainWindow):
         self.widget = modifyEmpPass()
         self.close()
 
-    def onDeleteEmp (self):
-        self.widget = deleteEmployee()
+    def onViewEmp (self):
+        self.widget = viewEmployees()
         self.close()
 
     def onCancel (self):
@@ -1535,9 +1535,9 @@ class viewAvailableRewards(QMainWindow):
         global selectedDiscountID
         selectedDiscountID = int(ID)
 
-class deleteEmployee(QMainWindow):
+class viewEmployees(QMainWindow):
     def __init__(self):
-        super(deleteEmployee, self).__init__()
+        super(viewEmployees, self).__init__()
         uic.loadUi('UI/deleteEmployees.ui', self)
         self.showMaximized()
 
@@ -1549,8 +1549,11 @@ class deleteEmployee(QMainWindow):
         self.returnBtn = self.findChild(QtWidgets.QPushButton, 'returnBtn')
         self.returnBtn.clicked.connect(self.onReturn)
 
-        self.deleteBtn = self.findChild(QtWidgets.QPushButton, 'deleteBtn')
-        self.deleteBtn.clicked.connect(self.onDelete)
+        if (currentlyLoggedIn.accessLevel == 10):
+            self.deleteBtn = self.findChild(QtWidgets.QPushButton, 'deleteBtn')
+            self.deleteBtn.clicked.connect(self.onDelete)
+        else:
+            self.deleteBtn.hide()
 
         self.tableWidget.cellClicked.connect(self.wasClicked)
 
@@ -1612,10 +1615,7 @@ class deleteEmployee(QMainWindow):
                     filterBy = 0
                 
                 for row in employeeData:
-                    print(searchFor)
-                    print(searchFor.lower())
                     results = (str(row[filterBy]).lower()).find(searchFor.lower())
-                    print(results)
                     if (results != -1):
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(str(row[4]))) #name
                         self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1]))) #username
@@ -1676,5 +1676,8 @@ class deleteEmployee(QMainWindow):
         print("Selected Name: " + name)
 
     def onReturn (self):
-        self.widget = modifyEmployee()
+        if (currentlyLoggedIn.accessLevel == 10):
+            self.widget = modifyEmployee()
+        else:
+            self.widget = modifyEmployeeManager()
         self.close()
