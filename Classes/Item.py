@@ -53,6 +53,7 @@ class Item(DBConnector):
         self._cursor.execute(sql, (self.SKU,))
         info = self._cursor.fetchone()
         self._disconnect()
+        print(info)
 
         return info
 

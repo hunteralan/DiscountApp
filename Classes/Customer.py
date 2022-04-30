@@ -242,7 +242,7 @@ class Customer(DBConnector):
             (%s, %s, %s, %s, %s)
         '''
         for item in self.cart:
-            if ((item._getItemInfo()[3] + (item.count * -1)) >= 0):
+            if ((item._getItemInfo()[2] + (item.count * -1)) >= 0):
                 if (item.checkExists()):
                     itemInfo = item._getItemInfo()
                 else:

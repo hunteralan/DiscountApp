@@ -262,18 +262,18 @@ class Employee(DBConnector):
                     self._connection.commit()
                     self._disconnect()
                     print(f"[INFO] Changed {employee.username}'s access level in the database!")
-                    self.accessLevel = newLevel
+                    #self.accessLevel = newLevel
 
                     
 
                 elif (self.accessLevel <= employee.accessLevel):
-                    raise ValueError("Cannot promote a user in a higher or equivelent position")
+                    raise ValueError("Cannot promote a user in a higher or equivelent position!")
 
                 elif (type(employee) != Employee or not employee.checkExists()):
                     raise ValueError(f"{employee.username} is not a valid employee")
 
                 else:
-                    raise ValueError(f"No sufficient privilage to promote users: not admin")
+                    raise ValueError(f"No sufficient privilage to promote users: not an owner!")
             else:
                 raise ValueError(f"Incorrect creditials supplied for {self.username}")
         else:
