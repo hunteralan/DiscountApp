@@ -371,6 +371,8 @@ class addMember(QMainWindow):
             self.phone.clear()
             self.email.clear()
             self.dateEdit.setDate(todayDate)
+
+            self.onCancelAddMember()
             
         except Exception as e:
             self.errMsg.setText(str(e))
@@ -535,6 +537,8 @@ class addItem(QMainWindow):
             self.itemPrice.setValue(1.00)
             self.ageReq.setChecked(False)
             self.itemAmount.clear()
+
+            self.onCancel()
             
         except Exception as e:
             self.errMsg.setText(str(e))
@@ -617,6 +621,8 @@ class addDiscount(QMainWindow):
             splitDate = todaydate.split("-")
             todayDate = QDate(int(splitDate[0]), int(splitDate[1]), int(splitDate[2]))
             self.dateEdit.setDate(todayDate)
+
+            self.onCancel()
 
         except Exception as e:
             self.errMsg.setText(str(e))
@@ -1122,7 +1128,8 @@ class viewItems(QMainWindow):
             for row in data:
                 self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
                 self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
-                self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
+                self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem("$" + str(round(row[2],2))))
+                self.tableWidget.setItem(tableIndex, 3, QtWidgets.QTableWidgetItem(str(row[3])))
 
                 tableIndex += 1
         except Exception as e:
