@@ -366,8 +366,6 @@ class addMember(QMainWindow):
             self.phone.clear()
             self.email.clear()
             self.dateEdit.setDate(todayDate)
-
-            self.onCancelAddMember()
             
         except Exception as e:
             self.errMsg.setText(str(e))
@@ -518,8 +516,6 @@ class addItem(QMainWindow):
             self.itemPrice.setValue(1.00)
             self.ageReq.setChecked(False)
             self.itemAmount.clear()
-
-            self.onCancel()
             
         except Exception as e:
             self.errMsg.setText(str(e))
@@ -602,8 +598,6 @@ class addDiscount(QMainWindow):
             splitDate = todaydate.split("-")
             todayDate = QDate(int(splitDate[0]), int(splitDate[1]), int(splitDate[2]))
             self.dateEdit.setDate(todayDate)
-
-            self.onCancel()
 
         except Exception as e:
             self.errMsg.setText(str(e))
@@ -1025,9 +1019,15 @@ class viewCart(QMainWindow):
     def onCheckOut(self):
         try:
             print("CUSTOMER PHONE NUMBER: ", selectedMember.phone)
-            selectedMember.checkout()
-            self.errMsg.setText("Checkout successful!")
-            self.errMsg.setStyleSheet("color: green")
+            cartData = selectedMember.cart
+            
+            if (len(cartData == 0)):
+                self.errMsg.setText("Cannot check out with an empty cart!")
+                self.errMsg.setStyleSheet("color: red")
+            else:
+                selectedMember.checkout()
+                self.errMsg.setText("Checkout successful!")
+                self.errMsg.setStyleSheet("color: green")
 
             self.loadData()
         except Exception as e:
@@ -1189,12 +1189,15 @@ class viewItemsToPurchase(QMainWindow):
             tableIndex = 0
 
             for row in data:
-                self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
-                self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
-                self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
-                self.tableWidget.setItem(tableIndex, 3, QtWidgets.QTableWidgetItem(str(row[3])))
-                self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem(str(row[4])))
-
+                self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0])) #name
+                self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1]))) #SKU
+                self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2]))) #Price
+                self.tableWidget.setItem(tableIndex, 3, QtWidgets.QTableWidgetItem(str(row[3]))) #Quantity
+                if (row[4] == 21):
+                    self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem("Yes")) #Age Req
+                elif (row[4] == 0):
+                    self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem("No")) #Age Req
+            
                 tableIndex += 1
         except Exception as e:
             self.errMsg.setText(str(e))
