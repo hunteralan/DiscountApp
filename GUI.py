@@ -37,17 +37,12 @@ class Login(QMainWindow):
         uic.loadUi('UI/LoginWindow.ui', self)
         self.showMaximized()
         self.errMsg.setStyleSheet("color: white")
-        
-        #Finding and setting up all of the buttons
-        #TO-DO: Change these button names to be more descriptive
-        self.submit = self.findChild(QtWidgets.QPushButton, 'pushButton_3')
-        self.submit.clicked.connect(self.onRegister)
-        
-        self.cancel = self.findChild(QtWidgets.QPushButton, 'pushButton_2')
-        self.cancel.clicked.connect(self.onSubmit)
-        
-        self.username = self.findChild(QtWidgets.QLineEdit, 'lineEdit')
-        self.password = self.findChild(QtWidgets.QLineEdit, 'lineEdit_2')
+
+        self.submit = self.findChild(QtWidgets.QPushButton, 'submitBtn')
+        self.submit.clicked.connect(self.onSubmit)
+
+        self.register = self.findChild(QtWidgets.QPushButton, 'registerBtn')
+        self.register.clicked.connect(self.onRegister)
         
         global successfulRegistration
         if (successfulRegistration == True):
@@ -70,12 +65,10 @@ class Login(QMainWindow):
                 #If the employee is considered an admin or not, display the correct main page
                 if (checkEmployee.accessLevel > 0):
                     currentlyLoggedIn = Employee(username=self.username.text(), password=self.password.text())
-
                     self.widget = adminMain()
                     self.close()
                 else:
                     currentlyLoggedIn = Employee(username=self.username.text(), password=self.password.text())
-
                     self.widget = mainLower()
                     self.close()
 
@@ -88,7 +81,6 @@ class Login(QMainWindow):
         except Exception as e:
             self.errMsg.setText(str(e))
 
-#Registration Page
 class Registration(QMainWindow):
     def __init__(self):
         super(Registration, self).__init__()
@@ -226,8 +218,13 @@ class adminMain(QMainWindow):
         self.widget = addDiscount()
         self.close()
 
+    # Go to the correct employee modification screen based on if
+    # the currently logged in employee is an owner or manager
     def onModifyEmployee (self):
-        self.widget = modifyEmployee()
+        if (currentlyLoggedIn.accessLevel == 10):
+            self.widget = modifyEmployee()
+        else:
+            self.widget = modifyEmployeeManager()
         self.close()
 
     def onViewMember (self):
@@ -360,8 +357,6 @@ class addMember(QMainWindow):
 
             else:
                 try:
-                    if (abs(dateDifference) < 21):
-                        print("Member is under 21")
                     newCustomer = Customer(name, DOB, phone, DLN, email)
                     Customer.createAccount(newCustomer)
                     self.errMsg.setText("Success!")
@@ -383,29 +378,24 @@ class addMember(QMainWindow):
             
     def onAutoAdd (self):
         global memData
-        #print("Entering autoadd")
-        #print(memData)
         if (memData[0] == ""):
-            #print("Scanning")
-            self.widget = testScan()
+            self.widget = scan()
             self.close()
 
+    # Updates the member registration page with the data gathered from the scan
     def updateFields (self):
         try:
             global memData
-            #print("Entering updateFields")
             data = memData
 
             self.name.setText(str(data[0]) + " " + str(data[1]))
             self.DLN.setText(str(data[2]))
 
             year = data[4][4:]
-            print(year)
+        
             day = data[4][2:4]
-            print(day)
 
             month = data[4][0:2]
-            print(month)
 
             birthday = QDate(int(year), int(month), int(day))
             self.dateEdit.setDate(birthday)
@@ -420,58 +410,42 @@ class addMember(QMainWindow):
             self.widget = mainLower()
         self.close()
 
-class testScan(QMainWindow):
+class scan(QMainWindow):
     def __init__(self):
-        super(testScan, self).__init__()
+        super(scan, self).__init__()
         uic.loadUi('UI/testScan.ui', self) 
         self.showMaximized()  
 
         self.submitBtn = self.findChild(QtWidgets.QPushButton, 'submitBtn')
-        self.submitBtn.clicked.connect(self.exit_app)
+        self.submitBtn.clicked.connect(self.scanFunc)
 
         self.returnBtn = self.findChild(QtWidgets.QPushButton, 'returnBtn')
         self.returnBtn.clicked.connect(self.onReturn)
 
-    def exit_app(self):
+    def scanFunc(self):
         try:
             scanString = self.plainTextEdit.toPlainText()
-            #print(scanString)
 
             info = []
+            #Parsing through the data, looking for specific prefixes before each required piece of data
             for lns in scanString.splitlines():
                 #Prefixes may not be the same for each state
-                #print(lns)
                 index = lns.find("DAQ")
-                print(index)
                 if (index != -1):
-                    print(lns[index:])
                     DLN = lns[index:]
-                    #info.append(lns[index:])
                 if lns.startswith("DAC"):
-                    print(lns)
                     firstName = lns
-                #info.append(lns)
                 elif lns.startswith("DCS"):
-                    print(lns)
-                    #info.append(lns)
                     lastName = lns
                 elif lns.startswith("DAJ"):
-                    print(lns)
-                    #info.append(lns)
                     state = lns
                 elif lns.startswith("DBB"):
-                    print(lns)
-                    #info.append(lns)
                     DOB = lns
             info = [firstName, lastName, DLN, state, DOB]
 
             global memData
-            #print(memData)
             self.slimDown(info)
-            #print(memData)
             memData = info
-            print(memData)
-            #print(memData)
             self.widget = addMember()
             self.close()
         except Exception as e:
@@ -493,7 +467,6 @@ class testScan(QMainWindow):
 
     #Removes the prefixes and newline character from each piece of data
     def slimDown(self, data):
-        #print(data)
         index = 0
         for each in data:
             noPrefix = each[3:] #Only keep the data after the third character
@@ -501,9 +474,6 @@ class testScan(QMainWindow):
             data[index] = noNewLine
             index += 1
         #Orders the data to match the output
-        #self.swapPositions(data, 0, 2)
-        #self.swapPositions(data, 1, 3)
-        print(data)
         return data
     
     def onReturn (self):
@@ -559,6 +529,7 @@ class addItem(QMainWindow):
                 self.errMsg.setText("Error Adding Item")
                 self.errMsg.setStyleSheet("color: red")
             
+            #Resetting the values in the fields
             self.addItemName.clear()
             self.itemSKU.clear()
             self.itemPrice.setValue(1.00)
@@ -587,10 +558,9 @@ class addDiscount(QMainWindow):
         self.cancel.clicked.connect(self.onCancel)
         
         todaydate = str(date.today())
-        #print(todaydate)
         
         splitDate = todaydate.split("-")
-        #print(splitDate)
+    
         todayDate = QDate(int(splitDate[0]), int(splitDate[1]), int(splitDate[2]))
         self.dateEdit.setDate(todayDate)
 
@@ -611,28 +581,20 @@ class addDiscount(QMainWindow):
             expiryDate= str(self.dateEdit.date().toPyDate())
             tempExpiryDate = expiryDate.replace('-','')
 
-            
-            
             if (self.discountType.currentText() == "Priced"):
                 rewardType = "price"
                 price = float(self.priceBox.value())
-                #print(price)
                 
             elif (self.discountType.currentText() == "Visit"):
                 rewardType = "visit"
                 quantity = int(self.quantityBox.value())
-                #print(quantity)
 
             elif (self.discountType.currentText() == "Item"):
                 rewardType = "item"
                 quantity = int(self.quantityBox.value())
-                #print(quantity)
-
                 itemSKU = int(self.sku.text())
-                #print(itemSKU)
-            
+                
             description = self.description.toPlainText()
-            #print(description)
 
             reward = Reward(name= discountName, expireDate= int(tempExpiryDate), rewardType= rewardType, 
                     numRequired= quantity, priceReq= price, description= description, requirement= itemSKU)
@@ -664,6 +626,8 @@ class addDiscount(QMainWindow):
         self.widget = adminMain()
         self.close()
 
+    #Different reward types need different inputs
+    #Showing/Hiding fields as needed
     def changeType (self, s):
         if (s == "Visit"):
             self.priceLabel.hide()
@@ -681,12 +645,12 @@ class addDiscount(QMainWindow):
         
         if (s == "Item"):
             self.sku.show()
-            self.quantityLabel.hide()
-            self.quantityBox.hide()
+            self.quantityLabel.show()
+            self.quantityBox.show()
             self.priceLabel.hide()
             self.priceBox.hide()
 
-#Administrator only
+#Accessed only by the owner(s)
 class modifyEmployee(QMainWindow):
     def __init__(self):
         super(modifyEmployee, self).__init__()
@@ -714,7 +678,40 @@ class modifyEmployee(QMainWindow):
         self.close()
 
     def onDeleteEmp (self):
-        self.widget = deleteEmployee()
+        self.widget = viewEmployees()
+        self.close()
+
+    #Returns to the correct control panel based the current employee's privileges
+    #This will be seen many times throughout the rest of the code
+    def onCancel (self):
+        if (currentlyLoggedIn.accessLevel > 0):
+            self.widget = adminMain()
+        else:
+            self.widget = mainLower()
+        self.close()
+
+#Accessed only by the manager(s); less functionality than the owner(s)
+class modifyEmployeeManager(QMainWindow):
+    def __init__(self):
+        super(modifyEmployeeManager, self).__init__()
+        uic.loadUi('UI/modifyEmployeeManager.ui', self)
+        self.showMaximized()
+
+        self.changePass = self.findChild(QtWidgets.QPushButton, 'changePassBtn')
+        self.changePass.clicked.connect(self.onChangePass)
+
+        self.viewEmp = self.findChild(QtWidgets.QPushButton, 'deleteEmpBtn')
+        self.viewEmp.clicked.connect(self.onViewEmp)
+
+        self.cancel = self.findChild(QtWidgets.QPushButton, 'cancelBtn')
+        self.cancel.clicked.connect(self.onCancel)
+
+    def onChangePass (self):
+        self.widget = modifyEmpPass()
+        self.close()
+
+    def onViewEmp (self):
+        self.widget = viewEmployees()
         self.close()
 
     def onCancel (self):
@@ -729,11 +726,9 @@ class modifyEmpPass(QMainWindow):
         super(modifyEmpPass, self).__init__()
 
         if (currentlyLoggedIn.accessLevel > 0):
-            print("Test")
             uic.loadUi('UI/modifyEmpPass.ui', self)
             self.showMaximized()
         else:
-            print("Test2")
             uic.loadUi('UI/modifyEmpPassLow.ui', self)
             self.showMaximized()
 
@@ -745,7 +740,6 @@ class modifyEmpPass(QMainWindow):
 
     
     def onSubmit (self):
-        admin = False
         enteredUsername = ""
 
         if (currentlyLoggedIn.accessLevel > 0):
@@ -763,14 +757,11 @@ class modifyEmpPass(QMainWindow):
                 self.errMsg.setText("Passwords do not match!")
                 self.errMsg.setStyleSheet("color: red")
 
-                if (admin == True):
-                    self.username.clear()
-
                 self.newPass.clear()
                 self.confirmPass.clear()
 
             else:
-                if (enteredUsername == ""):
+                if (enteredUsername == "" or enteredUsername == currentlyLoggedIn.username):
                     currentlyLoggedIn.changePassword(newPassword = newPass)
 
                     self.widget = Login()
@@ -798,6 +789,8 @@ class modifyEmpPass(QMainWindow):
             self.widget = mainLower()
         self.close()
 
+#Accessed only by owner(s)
+#Allows for the owner to promote or demote other employees
 class modifyEmpAccess(QMainWindow):
     def __init__(self):
         super(modifyEmpAccess, self).__init__()
@@ -831,8 +824,9 @@ class modifyEmpAccess(QMainWindow):
         else:
             try:
                 emp = Employee(username = username)
+                
                 currentlyLoggedIn.changeAccessLevel(employee=emp, newLevel=(self.accessLevel.currentIndex()) -1)
-
+                
                 self.errMsg.setText("Success!")
                 self.errMsg.setStyleSheet("color: green")
 
@@ -846,7 +840,8 @@ class modifyEmpAccess(QMainWindow):
     def onCancel (self):
         self.widget = modifyEmployee()
         self.close()
-    
+
+#loads all members and their various options
 class viewMember(QMainWindow):
     def __init__(self):
         super(viewMember, self).__init__()
@@ -893,8 +888,10 @@ class viewMember(QMainWindow):
             self.errMsg.setText(str(e))
             self.errMsg.setStyleSheet("color: red")
 
+    #Searching for data in the table is NOT case sensitive.
+    #This algorithm is used in each table that allows for searching
+    #This could be an external function, but unfortunately, each search has different requirements
     def search(self, data):
-
         self.errMsg.setText("")
         self.errMsg.setStyleSheet("color: white")
 
@@ -911,9 +908,8 @@ class viewMember(QMainWindow):
                 tableIndex = 0
 
                 for row in data:
-                    results = (str(row[filterBy - 1]).lower()).find(searchFor)
+                    results = (str(row[filterBy - 1]).lower()).find(searchFor.lower())
                     if (results != -1):
-                        print(row)
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
                         self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
                         self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
@@ -921,8 +917,6 @@ class viewMember(QMainWindow):
                         self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem(row[4]))
 
                         tableIndex += 1
-
-                    print(results)
                 
                 self.tableWidget.setRowCount(tableIndex)
 
@@ -971,8 +965,11 @@ class viewMember(QMainWindow):
             self.widget = mainLower()
         self.close()
 
-    def wasClicked(self, row, column):
-        #print("Row %d and Column %d was clicked" % (row, column))
+    #No matter where the user clicks in the table,
+    #The required data will be selected properly each time.
+    #A version of this algorithm is used in every page where
+    #selecting from a table is required
+    def wasClicked(self, row):
         customer = self.tableWidget.item(row, 0)
         customerDOB = self.tableWidget.item(row, 1)
         customerPhone = self.tableWidget.item(row, 2)
@@ -1009,13 +1006,10 @@ class viewCart(QMainWindow):
         
     
     def loadData(self):
-        print("[GUI]  Entering loadData from viewCart()...")
         try:
             global selectedMember
             
             cartData = selectedMember.cart
-            print("[GUI]  Printing details of cart object...")
-            print(selectedMember.cart)
 
             tableIndex = 0
             self.tableWidget.setRowCount(len(cartData))
@@ -1023,12 +1017,11 @@ class viewCart(QMainWindow):
                 self.errMsg.setText("Cart is empty!")
                 self.errMsg.setStyleSheet("color: red")
             else:
-                print("[GUI]  Storing cart data into table...")
                 for idx in range(len(cartData)):
                     itemName = cartData[idx].name
                     itemSKU = cartData[idx].SKU
                     itemQuantity = cartData[idx].count
-                    print("[GUI]  Storing each item from cart into table...")
+
                     self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(str(itemName)))
                     self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(itemSKU)))
                     self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(itemQuantity)))
@@ -1061,6 +1054,7 @@ class viewCart(QMainWindow):
         self.widget = viewMember()
         self.close()
 
+#Viewing purchase history of the selected member
 class viewHistory(QMainWindow):
     def __init__(self):
         super(viewHistory, self).__init__()
@@ -1076,7 +1070,6 @@ class viewHistory(QMainWindow):
         purchaseHistory = selectedMember.getPurchaseHistory()
 
         self.loadData(purchaseHistory)
-        
     
     def loadData(self, purchaseHistory):
         try:
@@ -1154,15 +1147,13 @@ class viewItems(QMainWindow):
                 tableIndex = 0
 
                 for row in data:
-                    results = (str(row[filterBy - 1]).lower()).find(searchFor)
+                    results = (str(row[filterBy - 1]).lower()).find(searchFor.lower())
                     if (results != -1):
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
                         self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
                         self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
 
                         tableIndex += 1
-
-                    print(results)
                 
                 self.tableWidget.setRowCount(tableIndex)
 
@@ -1239,9 +1230,8 @@ class viewItemsToPurchase(QMainWindow):
                 tableIndex = 0
 
                 for row in data:
-                    results = (str(row[filterBy - 1]).lower()).find(searchFor)
+                    results = (str(row[filterBy - 1]).lower()).find(searchFor.lower())
                     if (results != -1):
-                        print(row)
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(row[0]))
                         self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1])))
                         self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
@@ -1249,8 +1239,6 @@ class viewItemsToPurchase(QMainWindow):
                         self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem(str(row[4])))
 
                         tableIndex += 1
-
-                    print(results)
                 
                 self.tableWidget.setRowCount(tableIndex)
 
@@ -1262,19 +1250,13 @@ class viewItemsToPurchase(QMainWindow):
             self.errMsg.setText(str(e))
             self.errMsg.setStyleSheet("color: red")
     
-    def wasClicked(self, row, column):
+    def wasClicked(self, row):
         global selectedItem
-
-        #print("Row %d and Column %d was clicked" % (row, column))
         itemName = self.tableWidget.item(row, 0).text()
         itemSKU = self.tableWidget.item(row, 1).text()
         itemPrice = self.tableWidget.item(row, 2).text()
         itemQuantity = self.tableWidget.item(row, 3).text()
         itemAgeReq = self.tableWidget.item(row, 4).text()
-
-        print(itemName)
-        print(itemSKU)
-        print(itemPrice)
 
         selectedItem = Item(SKU=itemSKU, name=itemName, price=itemPrice, count=itemQuantity, ageRequired=itemAgeReq)
 
@@ -1289,15 +1271,9 @@ class viewItemsToPurchase(QMainWindow):
             currentDate = str(date.today())
             splitDate = currentDate.split("-")
             dateCombined = splitDate[0] + splitDate[1] + splitDate[2]
-            #print(splitDate)
-
-            print(dateCombined)
-            print(selectedMember.DOB)
-            print(str(abs(int(selectedMember.DOB) - int(dateCombined))))
 
             num,ok = QInputDialog.getInt(self,"Add to " + selectedMember.name + "'s cart","Quantity of " + selectedItem.name + ": ")
             
-		
             if ok:
                 try:
                     selectedItem.count = num
@@ -1316,12 +1292,10 @@ class viewItemsToPurchase(QMainWindow):
         except Exception as e:
             self.errMsg.setText(str(e))
             self.errMsg.setStyleSheet("color: red")
-        
-        
+         
     def onReturn (self):
         self.widget = viewCart()
         self.close()
-
 
 class viewDiscounts(QMainWindow):
     def __init__(self):
@@ -1364,11 +1338,9 @@ class viewDiscounts(QMainWindow):
                 self.tableWidget.setItem(tableIndex, 2, QtWidgets.QTableWidgetItem(str(row[2])))
                 self.tableWidget.setItem(tableIndex, 3, QtWidgets.QTableWidgetItem(str(row[3])))
                 self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem(str(row[4])))
-                if (row[5] == 0):
-                    print(row[5])
+                if (row[5] == 0): #Active Status
                     self.tableWidget.setItem(tableIndex, 5, QtWidgets.QTableWidgetItem("No"))
                 else:
-                    print(row[5])
                     self.tableWidget.setItem(tableIndex, 5, QtWidgets.QTableWidgetItem("Yes"))
                 self.tableWidget.setItem(tableIndex, 6, QtWidgets.QTableWidgetItem(str(row[6])))
                 self.tableWidget.setItem(tableIndex, 7, QtWidgets.QTableWidgetItem(str(row[7])))
@@ -1391,14 +1363,11 @@ class viewDiscounts(QMainWindow):
             filterBy = self.filterBox.currentIndex()
 
             searchFor = self.searchBox.text()
-            print(searchFor)
+
             if (searchFor.lower() == "no"):
                 searchFor = "0"
             elif (searchFor.lower() == "yes"):
                 searchFor = "1"
-            
-            print(searchFor)
-            print(filterBy - 1)
 
             if (filterBy == 0 or searchFor == ""):
                 self.tableWidget.clearContents()
@@ -1409,7 +1378,7 @@ class viewDiscounts(QMainWindow):
                 tableIndex = 0
 
                 for row in data:
-                    results = (str(row[filterBy - 1]).lower()).find(searchFor)
+                    results = (str(row[filterBy - 1]).lower()).find(searchFor.lower())
                     print(results)
                     if (results != -1):
                         
@@ -1419,7 +1388,6 @@ class viewDiscounts(QMainWindow):
                         self.tableWidget.setItem(tableIndex, 3, QtWidgets.QTableWidgetItem(str(row[3])))
                         self.tableWidget.setItem(tableIndex, 4, QtWidgets.QTableWidgetItem(str(row[4])))
                         if (row[5] == 0):
-                            print(row[5])
                             self.tableWidget.setItem(tableIndex, 5, QtWidgets.QTableWidgetItem("No"))
                         else:
                             self.tableWidget.setItem(tableIndex, 5, QtWidgets.QTableWidgetItem("Yes"))
@@ -1453,13 +1421,11 @@ class viewDiscounts(QMainWindow):
             self.errMsg.setText("You must select a reward before changing active status!")
             self.errMsg.setStyleSheet("color: red")
 
-    def wasClicked(self, row, column):
-        print("Row %d and Column %d was clicked" % (row, column))
+    def wasClicked(self, row):
         reward = self.tableWidget.item(row, 0)
         name = reward.text()
         global selectedDiscount
         selectedDiscount = Reward(name = name, expireDate= 0, rewardType= "visit")
-        print("Selected Name: " + name)
 
     def onReturn (self):
         if (currentlyLoggedIn.accessLevel > 0):
@@ -1519,7 +1485,6 @@ class viewAvailableRewards(QMainWindow):
         global selectedDiscountID
         global selectedMember
         try:
-            print(selectedDiscountID)
             selectedMember.redeemReward(selectedDiscountID)
             selectedDiscountID = 0
 
@@ -1531,16 +1496,15 @@ class viewAvailableRewards(QMainWindow):
             self.errMsg.setText(str(e))
             self.errMsg.setStyleSheet("color: red")
 
-    def wasClicked(self, row, column):
-        print("Row %d and Column %d was clicked" % (row, column))
+    def wasClicked(self, row):
         reward = self.tableWidget.item(row, 2)
         ID = reward.text()
         global selectedDiscountID
         selectedDiscountID = int(ID)
 
-class deleteEmployee(QMainWindow):
+class viewEmployees(QMainWindow):
     def __init__(self):
-        super(deleteEmployee, self).__init__()
+        super(viewEmployees, self).__init__()
         uic.loadUi('UI/deleteEmployees.ui', self)
         self.showMaximized()
 
@@ -1552,8 +1516,11 @@ class deleteEmployee(QMainWindow):
         self.returnBtn = self.findChild(QtWidgets.QPushButton, 'returnBtn')
         self.returnBtn.clicked.connect(self.onReturn)
 
-        self.deleteBtn = self.findChild(QtWidgets.QPushButton, 'deleteBtn')
-        self.deleteBtn.clicked.connect(self.onDelete)
+        if (currentlyLoggedIn.accessLevel == 10):
+            self.deleteBtn = self.findChild(QtWidgets.QPushButton, 'deleteBtn')
+            self.deleteBtn.clicked.connect(self.onDelete)
+        else:
+            self.deleteBtn.hide()
 
         self.tableWidget.cellClicked.connect(self.wasClicked)
 
@@ -1615,8 +1582,7 @@ class deleteEmployee(QMainWindow):
                     filterBy = 0
                 
                 for row in employeeData:
-                    results = (str(row[filterBy]).lower()).find(searchFor)
-                    print(results)
+                    results = (str(row[filterBy]).lower()).find(searchFor.lower())
                     if (results != -1):
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(str(row[4]))) #name
                         self.tableWidget.setItem(tableIndex, 1, QtWidgets.QTableWidgetItem(str(row[1]))) #username
@@ -1668,14 +1634,15 @@ class deleteEmployee(QMainWindow):
             self.errMsg.setText(str(e))
             self.errMsg.setStyleSheet("color: red")
 
-    def wasClicked(self, row, column):
-        print("Row %d and Column %d was clicked" % (row, column))
+    def wasClicked(self, row):
         employee = self.tableWidget.item(row, 1)
         name = employee.text()
         global selectedEmployee
         selectedEmployee = Employee(username = name, password = "")
-        print("Selected Name: " + name)
 
     def onReturn (self):
-        self.widget = modifyEmployee()
+        if (currentlyLoggedIn.accessLevel == 10):
+            self.widget = modifyEmployee()
+        else:
+            self.widget = modifyEmployeeManager()
         self.close()
