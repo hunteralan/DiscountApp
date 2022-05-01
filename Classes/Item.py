@@ -23,7 +23,7 @@ class Item(DBConnector):
     def displayTable(self):
         '''
             Used for debug purposes to show the entire Employee database table.
-        '''
+        ''' 
 
         sql = """
             SELECT *

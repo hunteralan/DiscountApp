@@ -267,7 +267,7 @@ class Customer(DBConnector):
 
         
         self.visit()
-        self.clearCart()
+        self.clearCart() 
 
     def getPurchaseHistory(self):
         '''
