@@ -20,13 +20,8 @@ selectedDiscountID = 0
 discount = Reward("", 0, "item", 0, 0, 0, "")
 employee = Employee(username= "", password = "")
 
-#Pulled data for display
-data = Reward.displayAllRewards(discount)
-employeeData = Employee.getEmployees(employee)
-cartData = selectedMember.cart
-purchaseHistory = selectedMember.getPurchaseHistory()
-availableRewards = selectedMember.checkAvailableRewards()
-memData = ["", "", ""]
+# Initializing Global Var
+memData =["", "", ""]
 
 successfulRegistration = False
 
@@ -454,19 +449,6 @@ class scan(QMainWindow):
             self.widget = addMember()
             self.close()
 
-    #Sourced from geeksforgeeks.org; generic swap function
-    def swapPositions(self,list, pos1, pos2): 
-        
-        # popping both the elements from list 
-        first_ele = list.pop(pos1)    
-        second_ele = list.pop(pos2-1) 
-        
-        # inserting in each others positions 
-        list.insert(pos1, second_ele)   
-        list.insert(pos2, first_ele)   
-        print(list)
-        return list
-
     #Removes the prefixes and newline character from each piece of data
     def slimDown(self, data):
         index = 0
@@ -519,7 +501,6 @@ class addItem(QMainWindow):
                 if (ageReq == True):
                     newItem = Item(name=itemName, SKU=itemSKU, price=itemPrice, count=itemAmount, ageRequired=21)
                     Item.storeItem(newItem)
-                    print(newItem.ageRequired)
                 else:
                     newItem = Item(name=itemName, SKU=itemSKU, price=itemPrice, count=itemAmount)
                     Item.storeItem(newItem)
@@ -854,7 +835,7 @@ class viewMember(QMainWindow):
         uic.loadUi('UI/viewMembers.ui', self)
         self.showMaximized()
 
-        infoCust = Customer("", "", "", "")
+        infoCust = Customer("", "", None, "")
         data = Customer.displayTable(infoCust)
 
         self.loadData(data)
@@ -1043,6 +1024,7 @@ class viewCart(QMainWindow):
 
     def onCheckOut(self):
         try:
+            print("CUSTOMER PHONE NUMBER: ", selectedMember.phone)
             selectedMember.checkout()
             self.errMsg.setText("Checkout successful!")
             self.errMsg.setStyleSheet("color: green")
@@ -1100,7 +1082,6 @@ class viewHistory(QMainWindow):
     def onReturn(self):
         self.widget = viewMember()
         self.close()
-
 
 class viewItems(QMainWindow):
     def __init__(self):
@@ -1386,7 +1367,6 @@ class viewDiscounts(QMainWindow):
 
                 for row in data:
                     results = (str(row[filterBy - 1]).lower()).find(searchFor.lower())
-                    print(results)
                     if (results != -1):
                         
                         self.tableWidget.setItem(tableIndex, 0, QtWidgets.QTableWidgetItem(str(row[0])))

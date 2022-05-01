@@ -23,7 +23,14 @@ class Customer(DBConnector):
 
         self.name = name
         self.DOB = DOB
-        self.phone = phone
+
+        if (phone == None):
+            self.phone = phone
+        else:
+            try:
+                self.phone = int(phone)
+            except:
+                raise ValueError("Invalid phone number!")
         self.DLN = DLN
         self.email = email
         self.cart = []
@@ -167,15 +174,12 @@ class Customer(DBConnector):
         '''
         self.cart = []
 
-    def visit(self):
+    def addVisit(self):
         '''
             Adds a visit to the customers purchase history.
         '''
 
-        saveCart = self.cart
         self.addItemToCart(Item(0))
-        self.checkout()
-        self.cart = saveCart
         print(f"Added a customer visit!!")
 
     def displayCart(self):
@@ -198,12 +202,14 @@ class Customer(DBConnector):
             SELECT *
             FROM purchaseHistory
             WHERE SKU = %s
+                AND phone = %s
         '''
-        info = (item.SKU,)
+        info = (item.SKU, self.phone)
 
         self._connect()
         self._cursor.execute(sql, info)
         exists = self._cursor.fetchone()
+        print("SQL RESULTS: ", exists)
 
         if (exists == None):
             exists = False
@@ -241,8 +247,11 @@ class Customer(DBConnector):
                 VALUES
             (%s, %s, %s, %s, %s)
         '''
+
+        self.addVisit()
         for item in self.cart:
-            if ((item._getItemInfo()[3] + (item.count * -1)) >= 0):
+            print("ITEM PURCHASE: ", item.SKU)
+            if ((item._getItemInfo()[3] - item.count) >= 0):
                 if (item.checkExists()):
                     itemInfo = item._getItemInfo()
                 else:
@@ -253,20 +262,22 @@ class Customer(DBConnector):
                     self._updateItemPurchase(item)
                 else:
                     try:
-                        print("Adding! Youve never bought this before!!!!!!")
                         self._connect()
-                        self._cursor.execute(sql, (self.phone, item.SKU, item.count, self._getDate(), (itemInfo[2] * item.count)))
+                        sqlInfo = (self.phone, item.SKU, item.count, self._getDate(), (itemInfo[2] * item.count))
+                        self._cursor.execute(sql, sqlInfo)
                         self._connection.commit()
                         self._disconnect()
+                        print("Adding! Youve never bought this before!!!!!!")
                     except Exception as e:
                         print(f"[ERROR] Unsuccessful in checking out: {e}")
                 self._addAvailableRewards(item)
+
+                if (item.SKU != 0):
+                    Item(SKU=item.SKU, count=(-item.count)).storeItem()
                 
             else:
                 raise ValueError("Cannot buy this item! Buying more than the inventory contains!")
 
-        
-        self.visit()
         self.clearCart() 
 
     def getPurchaseHistory(self):
@@ -309,7 +320,8 @@ class Customer(DBConnector):
                 AND quantity % numReq = 0
                 AND r.active = 1
                 AND r.expireDate >= %s
-                AND type <> 'price')
+                AND type <> 'price'
+                AND p.phone = %s)
                 OR 
                 (r.active = 1
                  AND p.SKU = r.requirement
@@ -325,7 +337,14 @@ class Customer(DBConnector):
                                         AND phone = %s))
         '''
 
-        query = (self.phone, item.SKU, self._getDate(), self._getDate(), self.phone, self.phone)
+        print(f'''p.SKU = r.requirement
+                AND p.SKU = {item.SKU}
+                AND quantity % numReq = 0
+                AND r.active = 1
+                AND r.expireDate >= {self._getDate()}
+                AND type <> 'price'
+                AND p.phone = {self.phone}''')
+        query = (self.phone, item.SKU, self._getDate(), self.phone, self._getDate(), self.phone, self.phone)
 
         self._connect()
         self._cursor.execute(sql, query)
