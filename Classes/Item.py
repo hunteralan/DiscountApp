@@ -28,14 +28,12 @@ class Item(DBConnector):
         sql = """
             SELECT *
             FROM Inventory
+            WHERE SKU <> 0
         """
         self._connect()
         self._cursor.execute(sql)
         table = self._cursor.fetchall()
         self._disconnect()
-
-        for row in table:
-            print(row)
 
         return table
 

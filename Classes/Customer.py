@@ -262,12 +262,11 @@ class Customer(DBConnector):
                         print(f"[ERROR] Unsuccessful in checking out: {e}")
                 self._addAvailableRewards(item)
                 
-                if (item.SKU != 0):
-                    Item(SKU=item.SKU, count=(-1 * item.count)).storeItem()
             else:
                 raise ValueError("Cannot buy this item! Buying more than the inventory contains!")
 
         
+        self.visit()
         self.clearCart()
 
     def getPurchaseHistory(self):

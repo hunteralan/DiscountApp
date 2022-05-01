@@ -5,7 +5,6 @@ from Classes.Item import Item
 from Classes.Employee import Employee
 from Classes.Rewards import Reward
 
-#DBConnector("main")._deleteDBs()
 authDB = Database(dbSelection="auth").initialize()
 mainDB = Database(dbSelection="main").initialize()
 
