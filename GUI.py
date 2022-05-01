@@ -553,6 +553,7 @@ class addDiscount(QMainWindow):
         self.discountType.currentIndexChanged[str].connect(self.changeType)
         
     def onSubmit(self):
+        error = False
         try:
             discountName = str(self.name.text())
             price = 0
@@ -566,27 +567,46 @@ class addDiscount(QMainWindow):
                 rewardType = "price"
                 price = float(self.priceBox.value())
                 
+                if (price <= 0 or price.isnumeric() == False):
+                    self.errMsg.setText("Price Has to Be a Postive Non-Zero Number!")
+                    error = True
+                    
             elif (self.discountType.currentText() == "Visit"):
                 rewardType = "visit"
                 quantity = int(self.quantityBox.value())
-
+                
+                if (quantity <= 0 or quantity.isnumeric() == False):
+                    self.errMsg.setText("Quantity Has to Be a Postive Non-Zero Number!")
+                    error = True
+                    
             elif (self.discountType.currentText() == "Item"):
                 rewardType = "item"
                 quantity = int(self.quantityBox.value())
                 itemSKU = int(self.sku.text())
                 
+                if (quantity <= 0 or quantity.isnumeric() == False):
+                    self.errMsg.setText("Quantity Has to Be a Postive Non-Zero Number!")
+                    error = True
+                
+                if (itemSKU < 0 or itemSKU.isnumeric() == False):
+                    self.errMsg.setText("SKU Has to Be a Postive Non-Zero Number!")
+                    error = True
+                
             description = self.description.toPlainText()
-
-            reward = Reward(name= discountName, expireDate= int(tempExpiryDate), rewardType= rewardType, 
-                    numRequired= quantity, priceReq= price, description= description, requirement= itemSKU)
-            reward.createReward(currentlyLoggedIn)
-
+            
             if (discountName == ""):
                 self.errMsg.setText("Reward Name Cannot Be Blank")
-                self.errMsg.setStyleSheet("color: red")
-            else:
+                error = True
+            
+            if (error == False):
+                reward = Reward(name= discountName, expireDate= int(tempExpiryDate), rewardType= rewardType, 
+                    numRequired= quantity, priceReq= price, description= description, requirement= itemSKU)
+                reward.createReward(currentlyLoggedIn)
                 self.errMsg.setText("Successfully added discount!")
                 self.errMsg.setStyleSheet("color: green")
+                
+            else:
+                self.errMsg.setStlyeSheet("color: red")
 
             self.name.clear()
             self.priceBox.clear()
@@ -1248,6 +1268,11 @@ class viewItemsToPurchase(QMainWindow):
         itemPrice = self.tableWidget.item(row, 2).text()
         itemQuantity = self.tableWidget.item(row, 3).text()
         itemAgeReq = self.tableWidget.item(row, 4).text()
+        
+        if (itemAgeReq == "Yes"):
+            itemAgeReq = 21
+        else:
+            itemAgeReq = 0
 
         selectedItem = Item(SKU=itemSKU, name=itemName, price=itemPrice, count=itemQuantity, ageRequired=itemAgeReq)
 
