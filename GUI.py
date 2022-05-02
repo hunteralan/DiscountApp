@@ -22,6 +22,7 @@ employee = Employee(username= "", password = "")
 
 # Initializing Global Var
 memData =["", "", ""]
+employeeData = Employee.getEmployees(employee)
 
 successfulRegistration = False
 
@@ -567,29 +568,32 @@ class addDiscount(QMainWindow):
                 rewardType = "price"
                 price = float(self.priceBox.value())
                 
-                if (price <= 0 or price.isnumeric() == False):
+                if (price <= 0 == False):
                     self.errMsg.setText("Price Has to Be a Postive Non-Zero Number!")
                     error = True
                     
             elif (self.discountType.currentText() == "Visit"):
                 rewardType = "visit"
-                quantity = int(self.quantityBox.value())
+                quantity = self.quantityBox.value()
                 
-                if (quantity <= 0 or quantity.isnumeric() == False):
+                if (quantity <= int("0")):
                     self.errMsg.setText("Quantity Has to Be a Postive Non-Zero Number!")
                     error = True
                     
             elif (self.discountType.currentText() == "Item"):
                 rewardType = "item"
-                quantity = int(self.quantityBox.value())
-                itemSKU = int(self.sku.text())
+                quantity = self.quantityBox.value()
+                itemSKU = self.sku.text()
                 
-                if (quantity <= 0 or quantity.isnumeric() == False):
+                if (itemSKU.isnumeric() == False and itemSKU == ""):
+                    itemSKU = int("-1")
+                
+                if (quantity <= int("0")):
                     self.errMsg.setText("Quantity Has to Be a Postive Non-Zero Number!")
                     error = True
                 
-                if (itemSKU < 0 or itemSKU.isnumeric() == False):
-                    self.errMsg.setText("SKU Has to Be a Postive Non-Zero Number!")
+                if (int(itemSKU) < 0):
+                    self.errMsg.setText("SKU Has to Be a Postive Number or Zero!")
                     error = True
                 
             description = self.description.toPlainText()
@@ -606,11 +610,11 @@ class addDiscount(QMainWindow):
                 self.errMsg.setStyleSheet("color: green")
                 
             else:
-                self.errMsg.setStlyeSheet("color: red")
+                self.errMsg.setStyleSheet("color: red")
 
             self.name.clear()
-            self.priceBox.clear()
-            self.quantityBox.clear()
+            self.priceBox.setValue(0.00)
+            self.quantityBox.setValue(0)
             self.sku.clear()
             self.description.clear()
 
@@ -1041,7 +1045,7 @@ class viewCart(QMainWindow):
             print("CUSTOMER PHONE NUMBER: ", selectedMember.phone)
             cartData = selectedMember.cart
             
-            if (len(cartData == 0)):
+            if (len(cartData) == 0):
                 self.errMsg.setText("Cannot check out with an empty cart!")
                 self.errMsg.setStyleSheet("color: red")
             else:
